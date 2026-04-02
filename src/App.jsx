@@ -842,6 +842,8 @@ export default function App() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const convRef = useRef([]);
+  const streamTickerRef = useRef(null);
+  const prevModuleRef = useRef(activeModule);
 
   const userName = email ? email.split("@")[0].replace(/[._]/g," ").replace(/\b\w/g, l => l.toUpperCase()) : "";
 
@@ -891,26 +893,28 @@ export default function App() {
   // Cmd+K / Ctrl+K global search shortcut
   useEffect(() => {
     const handler = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); setSearchQuery(""); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k" && screen === "platform") { e.preventDefault(); setSearchOpen(true); setSearchQuery(""); }
       if (e.key === "Escape" && searchOpen) { setSearchOpen(false); setSearchQuery(""); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [searchOpen]);
+  }, [searchOpen, screen]);
 
   // Load KB on mount
   useEffect(() => {
     const kb = getKB();
     kbRef.current = kb;
     setKbWords(kb.split(/\s+/).length);
-    setHasKBOverride(!!localStorage.getItem("ag-kb-override"));
+    try { setHasKBOverride(!!localStorage.getItem("ag-kb-override")); } catch {}
   }, []);
 
-  useEffect(() => { scrollRef.current?.scrollTop && (scrollRef.current.scrollTop = scrollRef.current.scrollHeight); }, [messages, loading]);
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages, loading]);
   useEffect(() => { if (chatOpen) setTimeout(() => inputRef.current?.focus(), 200); }, [chatOpen]);
   useEffect(() => {
     if (screen === "platform") {
+      if (streamTickerRef.current) { clearInterval(streamTickerRef.current); streamTickerRef.current = null; }
       if (messages.length >= 2) saveSession();
+      prevModuleRef.current = activeModule;
       setMessages([]);
       convRef.current = [];
       sessionStartRef.current = null;
@@ -949,11 +953,12 @@ export default function App() {
     const fm = messages.find(m => !m.isTammy);
     const firstMsg = fm ? fm.text : "";
     const duration = sessionStartRef.current ? Math.round((Date.now() - sessionStartRef.current) / 1000) : 0;
-    const cat = detectCategory(activeModule, firstMsg);
+    const mod4save = prevModuleRef.current || activeModule;
+    const cat = detectCategory(mod4save, firstMsg);
     const s = {
       id: Date.now().toString(),
-      module: activeModule,
-      moduleLabel: MODULES.find(m => m.id === activeModule)?.label || activeModule,
+      module: mod4save,
+      moduleLabel: MODULES.find(m => m.id === mod4save)?.label || mod4save,
       summary: fm ? fm.text.slice(0, 55) + "..." : "Session",
       date: new Date().toISOString(),
       messageCount: messages.length,
@@ -963,7 +968,7 @@ export default function App() {
     setSessions(updated);
     saveSessions(updated);
     // Log rich session to team data
-    logTeamActivity(userName, activeModule, userRole, { category: cat, firstMessage: firstMsg.slice(0, 120), messageCount: messages.length, duration });
+    logTeamActivity(userName, mod4save, userRole, { category: cat, firstMessage: firstMsg.slice(0, 120), messageCount: messages.length, duration });
     setTeamData(loadTeamData());
   };
 
@@ -1004,13 +1009,17 @@ export default function App() {
 
       // Error response — not streaming
       if (!res.ok) {
-        const data = JSON.parse(await res.text());
-        convRef.current.push({ role: "assistant", content: data.error?.message || "Error" });
-        setMessages(p => [...p, { text: "Error: " + (data.error?.message || "Unknown error"), isTammy: true }]);
+        let errMsg = "Something went wrong. Try again.";
+        try { const data = JSON.parse(await res.text()); errMsg = data.error?.message || errMsg; } catch {}
+        convRef.current.push({ role: "assistant", content: errMsg });
+        setMessages(p => [...p, { text: errMsg, isTammy: true }]);
         setLoading(false);
         setTimeout(() => inputRef.current?.focus(), 100);
         return;
       }
+
+      // Clean up any previous streaming ticker
+      if (streamTickerRef.current) { clearInterval(streamTickerRef.current); streamTickerRef.current = null; }
 
       // Streaming with fixed-interval typewriter
       setMessages(p => [...p, { text: "", isTammy: true }]);
@@ -1018,21 +1027,24 @@ export default function App() {
       let fullText = "";
       let displayed = 0;
       let streamDone = false;
+      let aborted = false;
 
       // Fixed 12ms interval releases characters at a steady, even pace
       const ticker = setInterval(() => {
+        if (aborted) { clearInterval(ticker); streamTickerRef.current = null; return; }
         if (displayed >= fullText.length) {
           if (streamDone) {
             clearInterval(ticker);
+            streamTickerRef.current = null;
             convRef.current.push({ role: "assistant", content: fullText || "Empty response." });
           }
           return;
         }
-        // Release word-sized chunks for natural reading rhythm
         const next = fullText.indexOf(" ", displayed + 1);
         displayed = next === -1 ? fullText.length : Math.min(next + 1, fullText.length);
-        setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText.slice(0, displayed), isTammy: true }; return u; });
+        setMessages(p => { if (p.length === 0) { aborted = true; return p; } const u = p.slice(); u[u.length - 1] = { text: fullText.slice(0, displayed), isTammy: true }; return u; });
       }, 12);
+      streamTickerRef.current = ticker;
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -1055,22 +1067,30 @@ export default function App() {
         }
       };
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        processLines(decoder.decode(value, { stream: true }));
-      }
-      if (buffer.trim()) processLines("\n");
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          processLines(decoder.decode(value, { stream: true }));
+        }
+        if (buffer.trim()) processLines("\n");
+      } catch { /* stream interrupted — use what we have */ }
       streamDone = true;
 
-      // Wait for the ticker to finish displaying
+      // Wait for the ticker to finish displaying (with timeout safety)
       await new Promise(resolve => {
+        let waited = 0;
         const check = setInterval(() => {
-          if (displayed >= fullText.length) { clearInterval(check); resolve(); }
+          waited += 20;
+          if (aborted || displayed >= fullText.length || waited > 10000) { clearInterval(check); resolve(); }
         }, 20);
       });
+      if (!aborted && fullText) {
+        setMessages(p => { if (p.length === 0) return p; const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+      }
     } catch (e) {
-      setMessages(p => [...p, { text: e.message, isTammy: true }]);
+      if (streamTickerRef.current) { clearInterval(streamTickerRef.current); streamTickerRef.current = null; }
+      setMessages(p => [...p, { text: "Connection error. Please try again.", isTammy: true }]);
       setLoading(false);
     }
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -1272,7 +1292,7 @@ export default function App() {
           </button>
         </div>
         <div style={{padding:"4px 10px"}}>
-          <button onClick={() => {setMode(mode==="seller"?"manager":"seller");if(mode==="seller"){setMgrView("team");setSelectedUser(null);}else{setActiveModule("onboarding");}setChatOpen(mode==="seller"?false:true);}}
+          <button onClick={() => {if(mode==="seller"){setMode("manager");setMgrView("team");setSelectedUser(null);setActiveModule("__mgr");setChatOpen(false);}else{setMode("seller");setActiveModule("onboarding");setChatOpen(true);}}}
             style={{width:"100%",padding:"6px 14px",borderRadius:7,border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",color:"rgba(255,255,255,0.25)",fontSize:10.5,textAlign:"left"}}
             onMouseEnter={e => e.currentTarget.style.color="rgba(255,255,255,0.5)"}
             onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.25)"}>
@@ -1313,6 +1333,7 @@ export default function App() {
           {/* Manager views */}
           {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName} onSelectUser={name => setSelectedUser(name)}/>}
           {mode === "manager" && activeModule !== "help" && selectedUser && teamData[selectedUser] && <SellerDetail name={selectedUser} data={teamData[selectedUser]} onBack={() => setSelectedUser(null)}/>}
+          {mode === "manager" && activeModule !== "help" && selectedUser && !teamData[selectedUser] && <div style={{padding:"32px 40px"}}><button onClick={() => setSelectedUser(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:G.teal,fontFamily:"inherit",padding:0}}>← Back to Team</button><p style={{fontSize:13,color:G.muted,marginTop:16}}>This team member's data is no longer available.</p></div>}
           {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "patterns" && <PatternsView teamData={teamData}/>}
           {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "kb" && <KBAdmin kbWords={kbWords} hasOverride={hasKBOverride} onUpdate={(text) => {kbRef.current=text;setKbWords(text.split(/\s+/).length);setHasKBOverride(true);}} onReset={() => {kbRef.current=KNOWLEDGE_BASE;setKbWords(KNOWLEDGE_BASE.split(/\s+/).length);setHasKBOverride(false);}}/>}
 
@@ -1767,7 +1788,7 @@ export default function App() {
               <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",position:"relative"}} className="tammy-msg">
                 <TammyAvatar size={24}/>
                 <div style={{flex:1,padding:"10px 13px",background:G.bg,border:`1px solid ${G.border}`,borderRadius:"2px 12px 12px 12px",fontSize:12.5,color:G.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.text}</div>
-                {m.text && <button onClick={() => {navigator.clipboard.writeText(m.text);const btn=document.querySelector(`[data-copy="${i}"]`);if(btn){btn.textContent="Copied!";setTimeout(()=>btn.textContent="Copy",1500);}}} data-copy={i}
+                {m.text && <button onClick={() => {try{navigator.clipboard.writeText(m.text);const btn=document.querySelector(`[data-copy="${i}"]`);if(btn){btn.textContent="Copied!";setTimeout(()=>btn.textContent="Copy",1500);}}catch{}}} data-copy={i}
                   style={{position:"absolute",top:2,right:2,padding:"2px 6px",borderRadius:4,border:"none",background:G.borderLight,color:G.dim,fontSize:9,cursor:"pointer",fontFamily:"inherit",opacity:0,transition:"opacity 0.15s"}}
                   onMouseEnter={e => e.currentTarget.style.opacity=1}
                 >Copy</button>}
@@ -1818,8 +1839,8 @@ export default function App() {
                     if (r.action === "navigate") { setActiveModule(r.module); }
                     else if (r.action === "link") { window.open(r.url, "_blank"); }
                     else if (r.action === "doc") { window.open("/docs/" + r.filename, "_blank"); }
-                    else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 100); }
-                    else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 100); }
+                    else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 300); }
+                    else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 300); }
                   }
                 }}
                 style={{flex:1,border:"none",outline:"none",fontSize:15,color:G.dark,fontFamily:"inherit",background:"transparent"}}/>
