@@ -27,11 +27,23 @@ const MODULES = [
   {id:"methodology",label:"Methodology",icon:"M4 6h16M4 10h16M4 14h10M4 18h7",color:G.muted},
 ];
 
-const ONBOARDING_WEEKS = [
-  {week:"Welcome",title:"Welcome Aboard",status:"current",items:["Computer setup and system access","Self-directed learning modules","Meet and greet with leadership","Introduction to Gillis Academy courses"]},
-  {week:"Week 1",title:"The Gillis Brand",status:"locked",items:["Gillis brand, values, and culture","HR policies, health and safety","Systems and tools overview","ASM role and hotel portfolio overview"]},
-  {week:"Week 2",title:"Strategic Selling",status:"locked",items:["Hotel onboarding process","Room to Grow: Gillis Strategic Selling","Client experiences and Salesforce","Time management and Dynamic Market Assessment"]},
-  {week:"Week 3",title:"Into the Field",status:"locked",items:["Prospecting assignments","Bi-weekly and discovery call observations","Brand training deep-dives","Final Salesforce review"]},
+const ONBOARDING_ITEMS = [
+  {id:"ob1",label:"Gillis brand, values, and culture",tammy:true,prompt:"Tell me about Gillis brand values and culture.",week:"Week 1"},
+  {id:"ob2",label:"ASM role and hotel portfolio overview",tammy:true,prompt:"Explain the ASM role. What does my day look like?",week:"Week 1"},
+  {id:"ob3",label:"Room to Grow: Gillis Strategic Selling",tammy:true,prompt:"Introduce the Gillis Strategic Selling approach.",week:"Week 2"},
+  {id:"ob4",label:"Hotel onboarding process",tammy:true,prompt:"Walk me through onboarding a new hotel property.",week:"Week 2"},
+  {id:"ob5",label:"Time management and Dynamic Market Assessment",tammy:true,prompt:"Explain time management and the Dynamic Market Assessment.",week:"Week 2"},
+  {id:"ob6",label:"Prospecting fundamentals",tammy:true,prompt:"Teach me the basics of prospecting. Where do I start?",week:"Week 3"},
+  {id:"ob7",label:"Brand training deep-dives",tammy:true,prompt:"How does my brand affect my sales approach?",week:"Week 3"},
+  {id:"ob8",label:"Computer and system setup",tammy:false,note:"IT",week:"Welcome"},
+  {id:"ob9",label:"Self-directed learning",tammy:false,note:"Academy",week:"Welcome"},
+  {id:"ob10",label:"Meet and greet with leadership",tammy:false,note:"Your manager",week:"Welcome"},
+  {id:"ob11",label:"Gillis Academy course intro",tammy:false,note:"Gillis Academy",week:"Welcome"},
+  {id:"ob12",label:"HR policies, health and safety",tammy:false,note:"HR",week:"Week 1"},
+  {id:"ob13",label:"Systems and tools overview",tammy:false,note:"Your manager",week:"Week 1"},
+  {id:"ob14",label:"Salesforce and client setup",tammy:false,note:"RDOS",week:"Week 2"},
+  {id:"ob15",label:"Call observations",tammy:false,note:"Your pod",week:"Week 3"},
+  {id:"ob16",label:"Final Salesforce review",tammy:false,note:"RDOS",week:"Week 3"},
 ];
 
 const METHODOLOGY_ITEMS = [
@@ -290,6 +302,16 @@ export default function App() {
   const [fbText, setFbText] = useState("");
   const [fbSending, setFbSending] = useState(false);
   const [fbToast, setFbToast] = useState("");
+  const [checked, setChecked] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ag-ob-checked") || "[]"); } catch { return []; }
+  });
+  const toggleCheck = (id) => {
+    setChecked(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try { localStorage.setItem("ag-ob-checked", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const kbRef = useRef(null);
   const scrollRef = useRef(null);
@@ -583,23 +605,45 @@ export default function App() {
           {/* Onboarding */}
           {mode === "seller" && activeModule === "onboarding" && (
             <div>
-              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Your Learning Path</h2>
-              <p style={{fontSize:13,color:G.muted,margin:"0 0 24px"}}>Work through each stage. Tammy will guide you.</p>
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                {ONBOARDING_WEEKS.map((w,i) => (
-                  <div key={i} style={{background:G.white,border:`1px solid ${w.status==="current"?G.tealBorder:G.border}`,borderRadius:12,padding:"20px 22px",opacity:w.status==="locked"?0.55:1}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <div style={{width:28,height:28,borderRadius:"50%",background:w.status==="current"?G.tealLight:G.bg,border:`1.5px solid ${w.status==="current"?G.teal:G.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:w.status==="current"?G.teal:G.dim}}>{i+1}</div>
-                        <div><div style={{fontSize:14,fontWeight:600}}>{w.title}</div><div style={{fontSize:11,color:G.muted}}>{w.week}</div></div>
-                      </div>
-                      {w.status === "current" && <span style={{fontSize:10,fontWeight:600,color:G.teal,background:G.tealLight,padding:"4px 10px",borderRadius:20,border:`1px solid ${G.tealBorder}`}}>Current</span>}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                <h2 style={{fontSize:20,fontWeight:600,margin:0}}>Your Onboarding Checklist</h2>
+                <span style={{fontSize:13,fontWeight:600,color:G.teal}}>{checked.length}/{ONBOARDING_ITEMS.length}</span>
+              </div>
+              <p style={{fontSize:13,color:G.muted,margin:"0 0 8px"}}>Work through these at your own pace. Click any teal item to learn it with Tammy.</p>
+              <div style={{height:4,background:G.border,borderRadius:2,marginBottom:24,overflow:"hidden"}}><div style={{height:"100%",background:G.teal,borderRadius:2,width:(checked.length/ONBOARDING_ITEMS.length*100)+"%",transition:"width 0.3s"}}/></div>
+
+              <div style={{fontSize:11,fontWeight:600,color:G.teal,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>Learn with Tammy</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:28}}>
+                {ONBOARDING_ITEMS.filter(x => x.tammy).map(item => { const done = checked.includes(item.id); return (
+                  <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,background:G.white,border:`1px solid ${done ? G.tealBorder : G.border}`,borderRadius:10,padding:"14px 16px",transition:"all 0.15s"}}>
+                    <div onClick={() => toggleCheck(item.id)} style={{width:20,height:20,borderRadius:6,border:`2px solid ${done ? G.teal : G.border}`,background:done ? G.teal : "transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s"}}>
+                      {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
                     </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                      {w.items.map((item,j) => <div key={j} style={{fontSize:12,color:G.text,padding:"8px 10px",background:G.bg,borderRadius:6,display:"flex",alignItems:"center",gap:8}}><div style={{width:14,height:14,borderRadius:4,border:`1.5px solid ${G.border}`,flexShrink:0}}/>{item}</div>)}
+                    <div onClick={() => {setChatOpen(true);sendMessage(item.prompt);}} style={{flex:1,cursor:"pointer"}}
+                      onMouseEnter={e => e.currentTarget.querySelector('.ob-label').style.color = G.teal}
+                      onMouseLeave={e => e.currentTarget.querySelector('.ob-label').style.color = done ? G.dim : G.dark}>
+                      <div className="ob-label" style={{fontSize:13,fontWeight:500,color:done ? G.dim : G.dark,textDecoration:done ? "line-through" : "none",transition:"color 0.15s"}}>{item.label}</div>
+                      <div style={{fontSize:11,color:G.dim,marginTop:2}}>Suggested: {item.week}</div>
                     </div>
+                    <div style={{fontSize:10,fontWeight:600,color:G.teal,background:G.tealLight,padding:"3px 8px",borderRadius:12,flexShrink:0}}>Ask Tammy</div>
                   </div>
-                ))}
+                );})}
+              </div>
+
+              <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>Complete on your own</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {ONBOARDING_ITEMS.filter(x => !x.tammy).map(item => { const done = checked.includes(item.id); return (
+                  <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 16px"}}>
+                    <div onClick={() => toggleCheck(item.id)} style={{width:20,height:20,borderRadius:6,border:`2px solid ${done ? G.teal : G.border}`,background:done ? G.teal : "transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s"}}>
+                      {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:500,color:done ? G.dim : G.dark,textDecoration:done ? "line-through" : "none"}}>{item.label}</div>
+                      <div style={{fontSize:11,color:G.dim,marginTop:2}}>Suggested: {item.week}</div>
+                    </div>
+                    <div style={{fontSize:10,color:G.dim,background:G.bg,padding:"3px 8px",borderRadius:12,flexShrink:0}}>{item.note}</div>
+                  </div>
+                );})}
               </div>
             </div>
           )}
