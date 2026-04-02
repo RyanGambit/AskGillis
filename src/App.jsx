@@ -24,6 +24,7 @@ const MODULES = [
   {id:"situation",label:"Situation",icon:"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01",color:G.lilac},
   {id:"roleplay",label:"Role Play",icon:"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",color:G.orange},
   {id:"sharpener",label:"Daily Sharpener",icon:"M13 2L3 14h9l-1 8 10-12h-9l1-8z",color:G.gold},
+  {id:"social",label:"LinkedIn & Social",icon:"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",color:"#3B82F6"},
   {id:"methodology",label:"Methodology",icon:"M4 6h16M4 10h16M4 14h10M4 18h7",color:G.muted},
 ];
 
@@ -107,12 +108,54 @@ const SHARPENER_DRILLS = [
   {type:"Qualifying Questions",scenario:"You're meeting with a corporate travel manager whose company is expanding with 3 new distribution centers. Draft 4 qualifying questions: Business Needs, Competition, Decision Making, Event Logistics."},
 ];
 
+const SOCIAL_ITEMS = [
+  {
+    category:"Your Profile",
+    items:[
+      {label:"Review my LinkedIn headline & summary",desc:"Most hotel sellers have 'Sales Manager at Marriott.' That tells a prospect nothing.",prompt:"I want to improve my LinkedIn profile. Right now my headline is just my job title. How should a hotel salesperson position themselves on LinkedIn so prospects actually want to connect?",input:true,inputLabel:"Paste your current headline and summary (optional)",inputPlaceholder:"e.g. Sales Manager | Hilton Garden Inn | Hospitality Professional"},
+    ]
+  },
+  {
+    category:"Connection Requests",
+    items:[
+      {label:"Write a connection request",desc:"Target someone specific without sounding like every other sales bot.",prompt:"I want to send a LinkedIn connection request to a prospect. Help me write one that doesn't sound like a generic sales pitch.",input:true,inputLabel:"Who are you connecting with and why?",inputPlaceholder:"e.g. Corporate travel manager at a manufacturing company expanding into my market"},
+      {label:"Connect after meeting someone in person",desc:"You met at a conference, site visit, or networking event. Now bridge it to LinkedIn.",prompt:"I met someone at an event and want to connect on LinkedIn. How do I write a request that references our conversation without being awkward?"},
+      {label:"Reconnect with a cold contact",desc:"Someone you haven't talked to in months. Re-engage without being weird about it.",prompt:"I have a LinkedIn connection I haven't spoken to in a while. They're at a company that could be a good fit. How do I re-engage without it feeling random?"},
+    ]
+  },
+  {
+    category:"Messages & DMs",
+    items:[
+      {label:"First message after they accept",desc:"They accepted your request. Now what? Don't blow it with a pitch.",prompt:"A prospect just accepted my LinkedIn connection request. What should my first message say? I don't want to immediately pitch them.",input:true,inputLabel:"Who are they and what's your angle?",inputPlaceholder:"e.g. Event planner at a tech company, they host quarterly offsites"},
+      {label:"Follow up on a message they haven't replied to",desc:"You sent a message, crickets. How to nudge without being pushy.",prompt:"I sent a LinkedIn message to a prospect a week ago and they haven't replied. Should I follow up? What do I say?"},
+      {label:"Turn a LinkedIn conversation into a real call",desc:"The bridge from online chat to offline business.",prompt:"I've been messaging back and forth with a prospect on LinkedIn. How do I move this to a phone call or meeting without being too aggressive?"},
+    ]
+  },
+  {
+    category:"Posting & Content",
+    items:[
+      {label:"Write a post that positions me as an expert",desc:"Not 'we have 80 rooms and free parking.' Something a prospect would actually read.",prompt:"Help me write a LinkedIn post that positions me as someone worth talking to in hotel sales. I don't want it to sound like an ad for my hotel.",input:true,inputLabel:"What do you know a lot about? Any recent wins or stories?",inputPlaceholder:"e.g. I just helped a construction company house 200 workers for 6 months"},
+      {label:"Share an industry insight without being boring",desc:"Market trends, local developments, hospitality news. Make it relevant.",prompt:"I want to share something about what's happening in my market on LinkedIn. Help me make it interesting and useful to the people I'm trying to reach."},
+      {label:"Celebrate a win without being cringey",desc:"You closed a big group or earned a client. Share it without the humble brag.",prompt:"I want to post about a recent win on LinkedIn but I don't want it to sound like a humble brag. How do I share it in a way that's genuine and also attracts prospects?"},
+    ]
+  },
+  {
+    category:"Engaging with Prospects",
+    items:[
+      {label:"Comment on a prospect's post",desc:"They posted something. How to engage without sounding like a salesperson.",prompt:"A prospect I want to connect with just posted on LinkedIn. How do I comment in a way that starts a relationship without being obviously salesy?"},
+      {label:"React to a company announcement",desc:"They're expanding, hiring, or launching something. Use it as an opening.",prompt:"A target company just posted about an expansion into my market. How do I use this as an opening on LinkedIn?"},
+      {label:"Engage with a prospect's content over time",desc:"The long game. Build familiarity before you ever reach out directly.",prompt:"I want to warm up a prospect before sending a connection request. How do I engage with their content over a few weeks so when I do reach out, they recognize my name?"},
+    ]
+  },
+];
+
 const MODE_PROMPTS = {
   onboarding:"They're new and probably overwhelmed. Give ONE thing to focus on in 2-3 sentences. Ask one question. Do NOT give a roadmap or overview of the whole program. Do NOT front-load context.",
   outreach:"Help with outreach using call planner. Reference their target details if entered. Be specific and actionable.",
   situation:"They have a situation. Validate in one sentence first, then coach. Be direct about what went wrong.",
   roleplay:"Set the scene, then become the prospect. Be realistic, slightly guarded, throw objections. Give brief specific feedback after.",
   sharpener:"Give the drill. Wait for response. Brief feedback: one thing good, one thing to sharpen. Keep it tight.",
+  social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
 };
 
@@ -355,6 +398,8 @@ export default function App() {
       return next;
     });
   };
+  const [socialExpanded, setSocialExpanded] = useState(null);
+  const [socialInput, setSocialInput] = useState("");
 
   const kbRef = useRef(null);
   const scrollRef = useRef(null);
@@ -377,6 +422,8 @@ export default function App() {
     if (screen === "platform") {
       setMessages([]);
       convRef.current = [];
+      setSocialExpanded(null);
+      setSocialInput("");
       logTeamActivity(userName, activeModule);
       setTeamData(loadTeamData());
     }
@@ -764,6 +811,56 @@ export default function App() {
             </div>
           )}
 
+          {/* LinkedIn & Social */}
+          {mode === "seller" && activeModule === "social" && (
+            <div>
+              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>LinkedIn & Social</h2>
+              <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 28px",maxWidth:540}}>Most hotel sellers either ignore LinkedIn or use it like a billboard. This is where you learn to use it like a salesperson. Pick what you need and Tammy will help you craft something that sounds like you, not a bot.</p>
+              {SOCIAL_ITEMS.map((cat, ci) => (
+                <div key={ci} style={{marginTop:ci > 0 ? 28 : 0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>{cat.category}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {cat.items.map((s, si) => {
+                      const key = ci + "-" + si;
+                      const isExpanded = socialExpanded === key;
+                      return (
+                        <div key={si} style={{borderRadius:10,border:`1px solid ${isExpanded ? "#3B82F6" : G.border}`,background:isExpanded ? "#EFF6FF" : G.white,transition:"all 0.15s",overflow:"hidden"}}>
+                          <div onClick={() => {
+                            if (s.input) { setSocialExpanded(isExpanded ? null : key); setSocialInput(""); }
+                            else { setChatOpen(true); sendMessage(s.prompt); }
+                          }}
+                            style={{padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}
+                            onMouseEnter={e => { if (!isExpanded) { e.currentTarget.parentElement.style.borderColor = "#3B82F6"; e.currentTarget.parentElement.style.background = "#EFF6FF"; }}}
+                            onMouseLeave={e => { if (!isExpanded) { e.currentTarget.parentElement.style.borderColor = G.border; e.currentTarget.parentElement.style.background = G.white; }}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                              <div style={{fontSize:13,fontWeight:600,color:G.dark,marginBottom:3}}>{s.label}</div>
+                              {s.input && <div style={{fontSize:10,fontWeight:600,color:"#3B82F6",background:"#DBEAFE",padding:"2px 8px",borderRadius:12,flexShrink:0,marginLeft:12}}>{isExpanded ? "Close" : "Add context"}</div>}
+                            </div>
+                            <div style={{fontSize:12,color:G.muted,lineHeight:1.5}}>{s.desc}</div>
+                          </div>
+                          {isExpanded && s.input && (
+                            <div style={{padding:"0 18px 16px 18px"}}>
+                              <label style={{display:"block",fontSize:11,fontWeight:600,color:G.muted,marginBottom:6,letterSpacing:"0.04em"}}>{s.inputLabel}</label>
+                              <textarea value={socialInput} onChange={e => setSocialInput(e.target.value)} placeholder={s.inputPlaceholder} rows={2}
+                                style={{width:"100%",boxSizing:"border-box",resize:"none",border:`1px solid ${G.border}`,borderRadius:8,padding:"10px 12px",fontSize:13,fontFamily:"inherit",color:G.dark,lineHeight:1.5,outline:"none",background:G.white}}
+                                onFocus={e => e.currentTarget.style.borderColor = "#3B82F6"}
+                                onBlur={e => e.currentTarget.style.borderColor = G.border}
+                                autoFocus/>
+                              <button onClick={() => {
+                                const msg = socialInput.trim() ? s.prompt + "\n\nContext: " + socialInput.trim() : s.prompt;
+                                setChatOpen(true); sendMessage(msg); setSocialExpanded(null); setSocialInput("");
+                              }} style={{marginTop:10,padding:"8px 18px",borderRadius:8,border:"none",background:"#3B82F6",color:"white",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Ask Tammy</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Methodology */}
           {mode === "seller" && activeModule === "methodology" && (
             <div>
@@ -815,6 +912,7 @@ export default function App() {
                     :activeModule==="situation"?["I keep hitting the same objection","My pipeline is drying up","I had a rough call"]
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
                     :activeModule==="sharpener"?["I'm ready for the drill","Give me a harder one","Why does this matter?"]
+                    :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
                     <button key={i} onClick={() => sendMessage(q)} style={{padding:"7px 11px",borderRadius:7,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:11.5,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}
