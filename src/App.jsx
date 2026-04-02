@@ -785,14 +785,7 @@ export default function App() {
     if (code.toUpperCase().trim() !== INVITATION_CODE) { setErr("Invalid invitation code."); return; }
     if (!email.includes("@")) { setErr("Please enter a valid email."); return; }
     // If role already stored, go straight to platform
-    const storedRole = localStorage.getItem("ag-role-" + email.trim().toLowerCase());
-    if (storedRole) {
-      setUserRole(storedRole);
-      setMode(storedRole === "manager" ? "manager" : "seller");
-      setScreen("platform");
-    } else {
-      setScreen("role-select");
-    }
+    setScreen("role-select");
   };
 
   const selectRole = (role) => {
