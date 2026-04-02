@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { SYSTEM_PROMPT } from "./prompt.js";
 import { KNOWLEDGE_BASE } from "./knowledgebase.js";
 import { OPERATIONAL_KB } from "./operational-kb.js";
@@ -833,6 +833,9 @@ export default function App() {
   };
   const [socialExpanded, setSocialExpanded] = useState(null);
   const [socialInput, setSocialInput] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef(null);
   const [faqOpen, setFaqOpen] = useState(null);
 
   const kbRef = useRef(null);
@@ -841,6 +844,59 @@ export default function App() {
   const convRef = useRef([]);
 
   const userName = email ? email.split("@")[0].replace(/[._]/g," ").replace(/\b\w/g, l => l.toUpperCase()) : "";
+
+  // Global search index
+  const searchIndex = useMemo(() => {
+    const items = [];
+    // Modules as navigation targets
+    MODULES.forEach(m => items.push({text:m.label,module:m.id,type:"module",action:"navigate",color:m.color}));
+    // Onboarding items
+    ONBOARDING_ITEMS.filter(x=>x.tammy).forEach(x => items.push({text:x.label,module:"onboarding",type:"Onboarding",action:"prompt",prompt:x.prompt,color:G.teal}));
+    // Game Plan
+    GAMEPLAN_STARTERS.forEach(cat => cat.items.forEach(x => items.push({text:x.label,desc:x.desc,module:"gameplan",type:"Weekly Game Plan",action:"prompt",prompt:x.prompt,color:"#8B5CF6"})));
+    // Situation
+    SITUATION_CATEGORIES.forEach(cat => cat.items.forEach(x => items.push({text:x.label,desc:x.desc,module:"situation",type:"Situation",action:"prompt",prompt:x.prompt,color:G.lilac})));
+    // Sharpener
+    SHARPENER_CATEGORIES.forEach(cat => cat.items.forEach(x => items.push({text:x.label,module:"sharpener",type:"Daily Sharpener",action:"drill",scenario:x.scenario,category:cat.category,color:cat.color})));
+    // Social
+    SOCIAL_ITEMS.forEach(cat => cat.items.forEach(x => items.push({text:x.label,desc:x.desc,module:"social",type:"LinkedIn & Social",action:"prompt",prompt:x.prompt,color:"#3B82F6"})));
+    // Methodology
+    METHODOLOGY_ITEMS.forEach(x => items.push({text:x.title,desc:x.desc,module:"methodology",type:"Methodology",action:"prompt",prompt:"Explain "+x.title+" with a real hotel sales example.",color:x.color}));
+    // Hub
+    HUB_CATEGORIES.forEach(cat => cat.items.forEach(x => {
+      if (x.type==="ask") items.push({text:x.label,desc:x.desc,module:"hub",type:"Gillis Hub",action:"prompt",prompt:x.prompt,color:"#6B7280"});
+      else if (x.type==="link"&&!x.placeholder) items.push({text:x.label,desc:x.desc,module:"hub",type:"Gillis Hub",action:"link",url:x.url,color:"#3B82F6"});
+      else if (x.type==="document") items.push({text:x.label,desc:x.desc,module:"hub",type:"Gillis Hub",action:"doc",filename:x.filename,color:G.teal});
+    }));
+    // FAQ
+    HELP_FAQS.forEach(x => items.push({text:x.q,module:"help",type:"FAQ",action:"navigate",color:G.muted}));
+    return items;
+  }, []);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const words = q.split(/\s+/).filter(Boolean);
+    return searchIndex
+      .map(item => {
+        const hay = (item.text + " " + (item.desc||"") + " " + (item.type||"")).toLowerCase();
+        const score = words.reduce((s,w) => s + (hay.includes(w) ? 1 : 0), 0);
+        return {...item, score};
+      })
+      .filter(x => x.score > 0)
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 12);
+  }, [searchQuery, searchIndex]);
+
+  // Cmd+K / Ctrl+K global search shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); setSearchQuery(""); }
+      if (e.key === "Escape" && searchOpen) { setSearchOpen(false); setSearchQuery(""); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [searchOpen]);
 
   // Load KB on mount
   useEffect(() => {
@@ -1236,6 +1292,13 @@ export default function App() {
             <span style={{fontSize:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (selectedUser ? selectedUser : mgrView === "kb" ? "Knowledge Base" : mgrView === "patterns" ? "Patterns & Topics" : "Team Overview") : mod.label}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button onClick={() => {setSearchOpen(true);setSearchQuery("");}} title="Search (⌘K)" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
+              onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
+              onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              Search
+              <span style={{fontSize:9,color:G.dim,marginLeft:2}}>&#8984;K</span>
+            </button>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
               onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
@@ -1735,6 +1798,66 @@ export default function App() {
                 style={{width:30,height:30,borderRadius:8,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:13,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 &#8593;
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEARCH OVERLAY */}
+      {searchOpen && (
+        <div style={{position:"fixed",inset:0,background:"rgba(44,37,64,0.5)",zIndex:999,display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:"12vh"}} onClick={() => {setSearchOpen(false);setSearchQuery("");}}>
+          <div style={{background:G.white,borderRadius:16,width:540,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e => e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 20px",borderBottom:`1px solid ${G.border}`}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={G.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input ref={searchRef} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search modules, drills, resources, questions..." autoFocus
+                onKeyDown={e => {
+                  if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); }
+                  if (e.key === "Enter" && searchResults.length) {
+                    const r = searchResults[0];
+                    setSearchOpen(false); setSearchQuery("");
+                    if (r.action === "navigate") { setActiveModule(r.module); }
+                    else if (r.action === "link") { window.open(r.url, "_blank"); }
+                    else if (r.action === "doc") { window.open("/docs/" + r.filename, "_blank"); }
+                    else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 100); }
+                    else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 100); }
+                  }
+                }}
+                style={{flex:1,border:"none",outline:"none",fontSize:15,color:G.dark,fontFamily:"inherit",background:"transparent"}}/>
+              <span style={{fontSize:10,color:G.dim,background:G.bg,padding:"3px 8px",borderRadius:5,fontFamily:"inherit"}}>ESC</span>
+            </div>
+            <div style={{maxHeight:400,overflowY:"auto"}}>
+              {searchQuery.trim() && !searchResults.length && (
+                <div style={{padding:"32px 20px",textAlign:"center",color:G.dim,fontSize:13}}>No results for "{searchQuery}"</div>
+              )}
+              {!searchQuery.trim() && (
+                <div style={{padding:"20px",color:G.muted,fontSize:12,lineHeight:1.6}}>
+                  <div style={{fontWeight:600,marginBottom:8,color:G.text}}>Quick tips</div>
+                  Try "objection", "expense", "LinkedIn", "opening statement", "incentive plan", or any topic.
+                </div>
+              )}
+              {searchResults.map((r, i) => (
+                <div key={i} onClick={() => {
+                  setSearchOpen(false); setSearchQuery("");
+                  if (r.action === "navigate") { setActiveModule(r.module); }
+                  else if (r.action === "link") { window.open(r.url, "_blank"); }
+                  else if (r.action === "doc") { window.open("/docs/" + r.filename, "_blank"); }
+                  else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 100); }
+                  else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 100); }
+                }} style={{padding:"12px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,borderBottom:`1px solid ${G.borderLight}`,transition:"background 0.1s"}}
+                  onMouseEnter={e => e.currentTarget.style.background=G.bg}
+                  onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                  <div style={{width:4,height:4,borderRadius:"50%",background:r.color,flexShrink:0}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:500,color:G.dark,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.text}</div>
+                    {r.desc && <div style={{fontSize:11,color:G.dim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.desc}</div>}
+                  </div>
+                  <div style={{flexShrink:0}}>
+                    <span style={{fontSize:9,fontWeight:600,color:r.action==="doc"?G.teal:r.action==="link"?"#3B82F6":G.muted,background:r.action==="doc"?G.tealLight:r.action==="link"?"#EFF6FF":G.bg,padding:"3px 8px",borderRadius:10}}>
+                      {r.action==="navigate"?"Go to":r.action==="link"?"Open":r.action==="doc"?"Download":r.action==="drill"?"Drill":"Ask Tammy"}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
