@@ -4,6 +4,9 @@ import { KNOWLEDGE_BASE } from "./knowledgebase.js";
 
 const INVITATION_CODE = "GILLIS2026";
 
+// ---- Feedback: paste your Google Apps Script web app URL here ----
+const FEEDBACK_SHEET_URL = "";
+
 const G = {
   bg:"#F5F4F8", white:"#FFFFFF",
   purple:"#3D2B6B", purpleLight:"#F3F0FA", purpleBorder:"#D8D0ED", purpleDark:"#2d1f5e",
@@ -283,6 +286,10 @@ export default function App() {
   const [teamData, setTeamData] = useState({});
   const [kbWords, setKbWords] = useState(0);
   const [hasKBOverride, setHasKBOverride] = useState(false);
+  const [fbOpen, setFbOpen] = useState(false);
+  const [fbText, setFbText] = useState("");
+  const [fbSending, setFbSending] = useState(false);
+  const [fbToast, setFbToast] = useState("");
 
   const kbRef = useRef(null);
   const scrollRef = useRef(null);
@@ -388,6 +395,40 @@ export default function App() {
     }
     setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  // ---- FEEDBACK ----
+  const submitFeedback = async () => {
+    if (!fbText.trim() || fbSending) return;
+    setFbSending(true);
+    const transcript = messages.map(m => (m.isTammy ? "Tammy: " : "User: ") + m.text).join("\n\n");
+    const payload = {
+      timestamp: new Date().toISOString(),
+      email: email,
+      mode: mode,
+      module: MODULES.find(m => m.id === activeModule)?.label || activeModule,
+      context: getCtx(),
+      feedback: fbText.trim(),
+      conversation: transcript || "(no conversation yet)",
+      messageCount: messages.length,
+    };
+    try {
+      if (FEEDBACK_SHEET_URL) {
+        await fetch(FEEDBACK_SHEET_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      setFbToast("Feedback sent! Thank you.");
+      setFbText("");
+      setFbOpen(false);
+    } catch {
+      setFbToast("Could not send feedback. Please try again.");
+    }
+    setFbSending(false);
+    setTimeout(() => setFbToast(""), 4000);
   };
 
   // ---- LOGIN ----
@@ -504,7 +545,15 @@ export default function App() {
             {mode === "seller" && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
             <span style={{fontSize:15,fontWeight:600}}>{mode === "manager" ? (mgrView === "kb" ? "Knowledge Base" : "Team Overview") : mod.label}</span>
           </div>
-          {mode === "seller" && !chatOpen && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
+              onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
+              onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Feedback
+            </button>
+            {mode === "seller" && !chatOpen && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
+          </div>
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:mode==="manager"?"0":"28px 36px"}}>
@@ -634,6 +683,11 @@ export default function App() {
               <div style={{fontSize:13,fontWeight:600}}>Tammy</div>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mod.color}}>Coaching: {mod.label}</div>
             </div>
+            <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
+              onMouseEnter={e => e.currentTarget.style.color=G.teal}
+              onMouseLeave={e => e.currentTarget.style.color=G.muted}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </button>
             <button onClick={() => {if(messages.length>=2)saveSession();setChatOpen(false);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:G.muted,padding:4}}>x</button>
           </div>
 
@@ -695,7 +749,49 @@ export default function App() {
         </div>
       )}
 
-      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}`}</style>
+      {/* FEEDBACK MODAL */}
+      {fbOpen && (
+        <div style={{position:"fixed",inset:0,background:"rgba(44,37,64,0.45)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={() => {setFbOpen(false);setFbText("");}}>
+          <div style={{background:G.white,borderRadius:16,width:440,maxWidth:"90vw",padding:"28px 30px",boxShadow:"0 20px 60px rgba(0,0,0,0.18)"}} onClick={e => e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:G.tealLight,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={G.teal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <div style={{fontSize:16,fontWeight:700,color:G.dark}}>Feedback</div>
+                  <div style={{fontSize:11,color:G.muted}}>Your conversation context is included automatically</div>
+                </div>
+              </div>
+              <button onClick={() => {setFbOpen(false);setFbText("");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:G.muted,padding:4}}>&times;</button>
+            </div>
+            <textarea value={fbText} onChange={e => setFbText(e.target.value)} placeholder="What's on your mind? Tell us what's working, what's not, or what you'd change..." rows={5}
+              style={{width:"100%",boxSizing:"border-box",resize:"vertical",border:`1px solid ${G.border}`,borderRadius:10,padding:"12px 14px",fontSize:13,fontFamily:"inherit",color:G.dark,lineHeight:1.6,outline:"none",background:G.bg}}
+              onFocus={e => e.currentTarget.style.borderColor=G.teal}
+              onBlur={e => e.currentTarget.style.borderColor=G.border}
+              autoFocus/>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14}}>
+              <div style={{fontSize:11,color:G.dim}}>{messages.length} message{messages.length !== 1 ? "s" : ""} in this conversation</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={() => {setFbOpen(false);setFbText("");}} style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+                <button onClick={submitFeedback} disabled={!fbText.trim()||fbSending}
+                  style={{padding:"8px 20px",borderRadius:8,border:"none",background:fbText.trim()&&!fbSending?G.teal:G.borderLight,color:fbText.trim()&&!fbSending?"#fff":G.dim,fontSize:12,fontWeight:600,cursor:fbText.trim()&&!fbSending?"pointer":"default",fontFamily:"inherit"}}>
+                  {fbSending ? "Sending..." : "Send Feedback"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FEEDBACK TOAST */}
+      {fbToast && (
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:G.purple,color:"#fff",padding:"10px 22px",borderRadius:10,fontSize:13,fontWeight:600,zIndex:1000,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeInUp 0.3s ease"}}>
+          {fbToast}
+        </div>
+      )}
+
+      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
     </div>
   );
 }
