@@ -158,47 +158,61 @@ const HUB_CATEGORIES = [
   {
     category:"Systems & Tools",
     items:[
-      {label:"How do I access Salesforce?",prompt:"How do I access Salesforce? What's the login URL and who do I contact if I'm locked out?"},
-      {label:"Delphi / Event Temple access",prompt:"How do I get access to Delphi or Event Temple? Who sets that up?"},
-      {label:"Setting up my email and calendar",prompt:"How do I set up my Gillis email and calendar? What systems do I need on my computer?"},
-      {label:"CRM help and troubleshooting",prompt:"I'm having trouble with the CRM. Who do I contact for help?"},
-      {label:"Where do I find brand assets?",prompt:"Where can I find brand logos, templates, and marketing materials for my hotels?"},
+      {type:"link",label:"Salesforce Login",desc:"Open Salesforce CRM",url:"#",placeholder:true},
+      {type:"link",label:"Delphi / Event Temple",desc:"Booking and event management",url:"#",placeholder:true},
+      {type:"link",label:"ZoomInfo",desc:"Contact and company research",url:"#",placeholder:true},
+      {type:"link",label:"Gillis Academy",desc:"Self-directed learning modules",url:"#",placeholder:true},
+      {type:"ask",label:"How do I get access to a system?",prompt:"I need access to one of the Gillis systems. Who do I contact and what's the process?"},
+      {type:"ask",label:"I'm locked out of a system",prompt:"I'm locked out of one of my systems. Who do I contact to get back in?"},
+    ]
+  },
+  {
+    category:"Brand & Marketing",
+    items:[
+      {type:"link",label:"Brand Assets & Templates",desc:"Logos, one-pagers, marketing materials",url:"#",placeholder:true},
+      {type:"document",label:"Gillis Brand Infographic",desc:"Brand positioning and value proposition",filename:"Gillis_Brand_Infographic.pdf"},
+      {type:"document",label:"Communication Guide — Tone & Voice",desc:"How to represent the Gillis brand",filename:"Communication_Guide.pdf"},
+      {type:"ask",label:"How should I position Gillis to a prospect?",prompt:"How should I describe Gillis to a prospect who's never heard of us? What's our value prop in plain language?"},
     ]
   },
   {
     category:"HR & Policies",
     items:[
-      {label:"Where do I submit my expense report?",prompt:"How do I submit an expense report at Gillis? What's the process and where's the form?"},
-      {label:"PTO and time-off policy",prompt:"What's the PTO policy at Gillis? How do I request time off?"},
-      {label:"Health and safety policies",prompt:"Where do I find Gillis health and safety policies?"},
-      {label:"Employee referral program",prompt:"Tell me about the Gillis employee referral program. How does it work and what's the bonus?"},
-      {label:"Hotel lead referral program",prompt:"How does the hotel lead referral program work? What do I get for referring a new hotel client?"},
+      {type:"link",label:"Submit Expense Report",desc:"Open expense submission portal",url:"#",placeholder:true},
+      {type:"link",label:"Request Time Off",desc:"PTO request form",url:"#",placeholder:true},
+      {type:"ask",label:"What's the PTO policy?",prompt:"What's the PTO policy at Gillis? How much do I get and how do I request it?"},
+      {type:"ask",label:"Health and safety policies",prompt:"Where do I find Gillis health and safety policies? What do I need to know?"},
+      {type:"ask",label:"How does mileage reimbursement work?",prompt:"What's the process for mileage reimbursement at Gillis?"},
     ]
   },
   {
-    category:"Compensation & Incentives",
+    category:"Programs & Incentives",
     items:[
-      {label:"Quarterly incentive plan",prompt:"Explain the current quarterly incentive plan. How is it structured and how do I qualify?"},
-      {label:"Kudos program",prompt:"What's the Kudos program and how does it work?"},
-      {label:"How is my performance measured?",prompt:"What metrics and criteria are used to evaluate my performance as a Gillis seller?"},
+      {type:"document",label:"Quarterly Incentive Plan",desc:"Current incentive structure and targets",filename:"RDOS_Quarterly_Incentive_Plan_2025.pdf"},
+      {type:"document",label:"Employee Referral Program",desc:"Refer someone, get rewarded",filename:"Employee_Referral_Program_2024.pdf"},
+      {type:"document",label:"Hotel Lead Referral Program",desc:"Refer a hotel, get rewarded",filename:"Hotel_Lead_Referral_Program_2024.pdf"},
+      {type:"document",label:"Kudos Program",desc:"Recognition and rewards",filename:"Kudos_Information.pdf"},
+      {type:"ask",label:"How is my performance measured?",prompt:"What metrics and criteria are used to evaluate my performance at Gillis? Walk me through the performance checklist."},
+    ]
+  },
+  {
+    category:"Onboarding & Training Docs",
+    items:[
+      {type:"document",label:"ASM Onboarding Checklist",desc:"New hire onboarding steps",filename:"ASM_Hotel_Onboarding_Check_List.docx"},
+      {type:"document",label:"RDOS Onboarding Checklist",desc:"Manager onboarding steps",filename:"RDOS_Hotel_Onboarding_Check_List_2025.docx"},
+      {type:"document",label:"Hotel Onboarding Timeline — Internal",desc:"Timeline for onboarding a new property",filename:"2026_Hotel_Onboarding_Timeline_Internal.pdf"},
+      {type:"document",label:"Hotel Onboarding Timeline — External",desc:"Client-facing onboarding timeline",filename:"2026_Hotel_Onboarding_Timeline_External.pdf"},
+      {type:"document",label:"RDOS Performance Checklist",desc:"Performance evaluation criteria",filename:"RDOS_Performance_Checklist_Oct_2025.docx"},
+      {type:"document",label:"Post Kick-Off Email Template",desc:"Email template after hotel onboarding kick-off",filename:"ASM_Post_Kick_Off_Email.docx"},
     ]
   },
   {
     category:"Contacts & Support",
     items:[
-      {label:"Who's my RDOS?",prompt:"How do I find out who my RDOS is and how to reach them?"},
-      {label:"IT support",prompt:"How do I contact IT support at Gillis? What's the process for tech issues?"},
-      {label:"HR contact",prompt:"How do I reach HR at Gillis?"},
-      {label:"Who do I talk to about...?",prompt:"I have a question but I don't know who to ask. Can you help me figure out the right person?"},
-    ]
-  },
-  {
-    category:"Hotel Operations",
-    items:[
-      {label:"Hotel onboarding process",prompt:"Walk me through what happens when Gillis onboards a new hotel. What's the timeline and who's involved?"},
-      {label:"Communication guide and tone",prompt:"What's the Gillis communication guide? How should I represent the brand in emails and calls?"},
-      {label:"Brand infographic and one-pager",prompt:"Tell me about the Gillis brand. What's our positioning and value proposition?"},
-      {label:"Client journey overview",prompt:"Walk me through the Gillis client journey from first contact to long-term partnership."},
+      {type:"ask",label:"Who's my RDOS?",prompt:"How do I find out who my RDOS is?"},
+      {type:"ask",label:"IT support",prompt:"How do I contact IT support at Gillis? What's the process for tech issues?"},
+      {type:"ask",label:"HR contact",prompt:"How do I reach HR at Gillis?"},
+      {type:"ask",label:"I don't know who to ask",prompt:"I have a question but I don't know who to ask at Gillis. Can you help me figure out the right person?"},
     ]
   },
 ];
@@ -1531,15 +1545,43 @@ export default function App() {
               {HUB_CATEGORIES.map((cat, ci) => (
                 <div key={ci} style={{marginTop:ci > 0 ? 24 : 0}}>
                   <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>{cat.category}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                    {cat.items.map((item, si) => (
-                      <button key={si} onClick={() => {setChatOpen(true);sendMessage(item.prompt);}}
-                        style={{padding:"12px 14px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s"}}
-                        onMouseEnter={e => {e.currentTarget.style.borderColor="#6B7280";e.currentTarget.style.background="#F9FAFB";}}
-                        onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.background=G.white;}}>
-                        <div style={{fontSize:12.5,fontWeight:500,color:G.dark}}>{item.label}</div>
-                      </button>
-                    ))}
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {cat.items.map((item, si) => {
+                      const borderColor = item.type === "link" ? "#3B82F6" : item.type === "document" ? G.teal : G.lilac;
+                      const isPlaceholder = item.placeholder;
+                      const isDocHosted = item.type === "document" && false; // flip to true when files added to public/docs/
+                      return (
+                        <div key={si}
+                          onClick={() => {
+                            if (isPlaceholder) return;
+                            if (item.type === "link") { window.open(item.url, "_blank"); }
+                            else if (item.type === "document" && isDocHosted) { window.open("/docs/" + item.filename, "_blank"); }
+                            else if (item.type === "document") { setChatOpen(true); sendMessage("Tell me about the " + item.label + ". What's in it and what do I need to know?"); }
+                            else { setChatOpen(true); sendMessage(item.prompt); }
+                          }}
+                          style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderRadius:8,border:`1px solid ${G.border}`,borderLeft:`3px solid ${isPlaceholder ? G.dim : borderColor}`,background:G.white,cursor:isPlaceholder?"default":"pointer",opacity:isPlaceholder?0.5:1,transition:"all 0.15s"}}
+                          onMouseEnter={e => {if(!isPlaceholder){e.currentTarget.style.borderColor=borderColor;e.currentTarget.style.background=borderColor+"0A";}}}
+                          onMouseLeave={e => {if(!isPlaceholder){e.currentTarget.style.borderColor=G.border;e.currentTarget.style.borderLeftColor=isPlaceholder?G.dim:borderColor;e.currentTarget.style.background=G.white;}}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:13,fontWeight:600,color:isPlaceholder?G.dim:G.dark}}>{item.label}</div>
+                            {item.desc && <div style={{fontSize:11.5,color:G.muted,marginTop:1}}>{item.desc}</div>}
+                          </div>
+                          <div style={{flexShrink:0}}>
+                            {isPlaceholder ? (
+                              <span style={{fontSize:9,fontWeight:600,color:G.dim,background:G.bg,padding:"3px 8px",borderRadius:10}}>Coming soon</span>
+                            ) : item.type === "link" ? (
+                              <span style={{fontSize:9,fontWeight:600,color:"#3B82F6",background:"#EFF6FF",padding:"3px 8px",borderRadius:10}}>Open &#8599;</span>
+                            ) : item.type === "document" && isDocHosted ? (
+                              <span style={{fontSize:9,fontWeight:600,color:G.teal,background:G.tealLight,padding:"3px 8px",borderRadius:10}}>Download</span>
+                            ) : item.type === "document" ? (
+                              <span style={{fontSize:9,fontWeight:600,color:G.lilac,background:G.lilacLight,padding:"3px 8px",borderRadius:10}}>Ask Tammy</span>
+                            ) : (
+                              <span style={{fontSize:9,fontWeight:600,color:G.lilac,background:G.lilacLight,padding:"3px 8px",borderRadius:10}}>Ask Tammy</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -1646,7 +1688,7 @@ export default function App() {
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
                     :activeModule==="sharpener"?["Surprise me with a drill","Practice opening statements","Work on objection handling"]
                     :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
-                    :activeModule==="hub"?["Where do I submit my expense report?","How do I access Salesforce?","Who should I contact about...?"]
+                    :activeModule==="hub"?["Where do I submit expenses?","Tell me about the incentive plan","Who do I contact for help?"]
                     :activeModule==="help"?["How do I get started?","What module should I use?","Give me a quick tip"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
