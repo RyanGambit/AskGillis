@@ -1060,12 +1060,7 @@ export default function App() {
           <div><div style={{fontSize:15,fontWeight:600,color:"#E5E5E5"}}>AskGillis</div><div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div></div>
         </div>
 
-        {/* KB indicator */}
-        <div style={{padding:"8px 14px 0"}}>
-          <div style={{padding:"5px 10px",borderRadius:6,background:"rgba(26,187,166,0.06)",border:"0.5px solid rgba(26,187,166,0.2)",fontSize:10,color:G.teal,display:"flex",alignItems:"center",gap:6}}>
-            <div style={{width:5,height:5,borderRadius:"50%",background:G.teal}}/>KB loaded ({kbWords.toLocaleString()})
-          </div>
-        </div>
+        {/* KB indicator (hidden, functionality preserved) */}
 
         {mode === "seller" ? <>
           <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
