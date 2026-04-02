@@ -260,11 +260,11 @@ const GAMEPLAN_STARTERS = [
 const MODE_PROMPTS = {
   onboarding:"They're new and probably overwhelmed. Give ONE thing to focus on in 2-3 sentences. Ask one question. Do NOT give a roadmap or overview of the whole program. Do NOT front-load context.",
   gameplan:"This is the weekly planning module. Help them prioritize their week across their properties. Ask what's on their plate, then help them decide where to focus energy. Be direct about what matters most and what can wait. Don't build a full plan unprompted. Start with one question, build from their answers. Keep it tight.",
-  outreach:"Help with outreach using call planner. Reference their target details if entered. Be specific and actionable.",
+  outreach:"Help with outreach using call planner. Reference their target details if entered. Build their 30-second opening statement (never sell in the opener). Suggest qualifying questions across the four categories (Business Needs, Competition, Decision Making, Event Logistics). Anticipate likely objections. If they want an email, draft one that leads with value. When drafting content for them, write the full draft — word limit doesn't apply to drafted content.",
   situation:"They have a situation. Validate in one sentence first, then coach. Be direct about what went wrong.",
   roleplay:"Set the scene, then become the prospect. Be realistic, slightly guarded, throw objections. Give brief specific feedback after.",
   sharpener:"The seller picked a drill. Present the scenario clearly, then wait for their attempt. After they respond, give brief direct feedback: one thing they did well, one thing to sharpen. Stay under 100 words for feedback. If they say 'surprise me', pick a random drill type and give them a specific scenario. Keep the energy up. Quick workout, not a lecture.",
-  social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct.",
+  social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct. When drafting content for them (connection requests, messages, posts), write the full draft — word limit doesn't apply to drafted content.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
 };
 
@@ -373,6 +373,20 @@ function ManagerDashboard({ teamData, userName, onSelectUser }) {
   if (topCat.length) insights.push({type:"pattern",text:`${topCat[0][0].replace(/_/g," ")} is the most common topic this week (${topCat[0][1]} sessions)`});
   const unusedMods = MODULES.filter(m => !users.some(([,u]) => u.sessions.some(s => s.module === m.id && new Date(s.date) > weekAgo)));
   if (unusedMods.length && unusedMods.length < MODULES.length) insights.push({type:"gap",text:`${unusedMods[0].label} had zero usage this week`});
+
+  if (!users.length) {
+    return (
+      <div style={{padding:"32px 40px",maxWidth:600}}>
+        <h2 style={{fontSize:22,fontWeight:600,margin:"0 0 4px"}}>Team Overview</h2>
+        <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>Activity across your team. Updates as sellers use the platform.</p>
+        <div style={{background:G.white,border:`1px solid ${G.tealBorder}`,borderRadius:14,padding:"36px 32px",textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:14}}>&#128075;</div>
+          <div style={{fontSize:16,fontWeight:600,color:G.dark,marginBottom:8}}>Welcome to your dashboard</div>
+          <div style={{fontSize:13,color:G.text,lineHeight:1.7,maxWidth:420,margin:"0 auto"}}>As your team starts using AskGillis, you'll see their activity, patterns, and coaching opportunities here. In the meantime, try switching to Seller Mode to explore the platform yourself and see what your team will experience.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{padding:"32px 40px",maxWidth:860}}>
@@ -718,7 +732,13 @@ export default function App() {
   const [mode, setMode] = useState("seller");
   const [mgrView, setMgrView] = useState("team");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [activeModule, setActiveModule] = useState("onboarding");
+  const [activeModule, setActiveModule] = useState(() => {
+    try {
+      const last = localStorage.getItem("ag-last-module");
+      if (last && last !== "help") return last;
+    } catch {}
+    return new Date().getDay() === 1 ? "gameplan" : "onboarding";
+  });
   const [chatOpen, setChatOpen] = useState(true);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -767,11 +787,15 @@ export default function App() {
   useEffect(() => { if (chatOpen) setTimeout(() => inputRef.current?.focus(), 200); }, [chatOpen]);
   useEffect(() => {
     if (screen === "platform") {
+      if (messages.length >= 2) saveSession();
       setMessages([]);
       convRef.current = [];
       sessionStartRef.current = null;
       setSocialExpanded(null);
       setSocialInput("");
+      if (activeModule !== "help" && activeModule !== "__mgr") {
+        try { localStorage.setItem("ag-last-module", activeModule); } catch {}
+      }
     }
   }, [activeModule]);
   useEffect(() => {
@@ -1264,7 +1288,8 @@ export default function App() {
                     : <input value={od[f.k]} onChange={e => setOd(p=>({...p,[f.k]:e.target.value}))} placeholder={f.p} style={{width:"100%",padding:"10px 14px",border:`1px solid ${G.border}`,borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none",color:G.dark,boxSizing:"border-box"}}/>}
                   </div>
                 ))}
-                <button onClick={() => {setChatOpen(true);sendMessage("I've entered my target details. Help me build my approach.");}} style={{padding:"12px 24px",borderRadius:9,border:"none",background:G.teal,color:"white",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Build my approach with Tammy</button>
+                <button onClick={() => {setChatOpen(true);sendMessage("I've entered my target details. Help me build my approach.");}} disabled={!od.company.trim()} style={{padding:"12px 24px",borderRadius:9,border:"none",background:od.company.trim()?G.teal:G.borderLight,color:od.company.trim()?"white":G.dim,fontSize:13,fontWeight:600,cursor:od.company.trim()?"pointer":"default",fontFamily:"inherit"}}>Build my approach with Tammy</button>
+                {!od.company.trim() && <p style={{fontSize:11,color:G.dim,margin:"10px 0 0"}}>Enter at least a company name to get started.</p>}
               </div>
             </div>
           )}
@@ -1290,6 +1315,11 @@ export default function App() {
                   </div>
                 </div>
               ))}
+
+              <div style={{marginTop:28,padding:"18px 20px",borderRadius:10,border:`1px dashed ${G.border}`,background:G.white,textAlign:"center"}}>
+                <div style={{fontSize:13,fontWeight:500,color:G.text,marginBottom:8}}>Something else on your mind?</div>
+                <button onClick={() => {setChatOpen(true);sendMessage("I have a situation I need help with.");}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:G.lilac,color:"white",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Just tell Tammy</button>
+              </div>
             </div>
           )}
 
@@ -1305,7 +1335,8 @@ export default function App() {
                     <input value={rp[f.k]} onChange={e => setRp(p=>({...p,[f.k]:e.target.value}))} placeholder={f.p} style={{width:"100%",padding:"10px 14px",border:`1px solid ${G.border}`,borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none",color:G.dark,boxSizing:"border-box"}}/>
                   </div>
                 ))}
-                <button onClick={() => {setChatOpen(true);sendMessage(`Ready to role play. Calling ${rp.who||"a prospect"}${rp.segment?" in "+rp.segment:""}. Objective: ${rp.objective||"get a meeting"}. Play the prospect.`);}} style={{padding:"12px 24px",borderRadius:9,border:"none",background:G.orange,color:"white",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Start Role Play</button>
+                <button onClick={() => {setChatOpen(true);sendMessage(`Ready to role play. Calling ${rp.who}${rp.segment?" in "+rp.segment:""}. Objective: ${rp.objective||"get a meeting"}. Play the prospect.`);}} disabled={!rp.who.trim()} style={{padding:"12px 24px",borderRadius:9,border:"none",background:rp.who.trim()?G.orange:G.borderLight,color:rp.who.trim()?"white":G.dim,fontSize:13,fontWeight:600,cursor:rp.who.trim()?"pointer":"default",fontFamily:"inherit"}}>Start Role Play</button>
+                {!rp.who.trim() && <p style={{fontSize:11,color:G.dim,margin:"10px 0 0"}}>Tell Tammy who you're calling to get started.</p>}
               </div>
             </div>
           )}
@@ -1317,9 +1348,9 @@ export default function App() {
               <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 24px",maxWidth:540}}>Pick a drill. Give it your best shot. Tammy gives you feedback. Five minutes, real reps, real improvement.</p>
 
               <button onClick={() => {
-                const allItems = SHARPENER_CATEGORIES.flatMap(c => c.items);
-                const pick = allItems[Math.floor(Math.random() * allItems.length)];
-                setChatOpen(true); sendMessage("Here's my drill:\n\n" + pick.scenario + "\n\nLet me give it a shot.");
+                const cat = SHARPENER_CATEGORIES[Math.floor(Math.random() * SHARPENER_CATEGORIES.length)];
+                const pick = cat.items[Math.floor(Math.random() * cat.items.length)];
+                setChatOpen(true); sendMessage("Here's my drill (" + cat.category + "):\n\n" + pick.scenario + "\n\nLet me give it a shot.");
               }}
                 style={{width:"100%",padding:"16px 18px",borderRadius:10,border:`1.5px solid ${G.goldBorder}`,background:`linear-gradient(135deg,${G.goldLight},${G.white})`,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s",marginBottom:28}}
                 onMouseEnter={e => {e.currentTarget.style.borderColor=G.gold;e.currentTarget.style.background=G.goldLight;}}
@@ -1496,6 +1527,11 @@ export default function App() {
               <div style={{fontSize:13,fontWeight:600}}>Tammy</div>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mode==="manager"?"#8B5CF6":mod.color}}>{mode==="manager"?"Coaching the Coach":("Coaching: "+mod.label)}</div>
             </div>
+            {messages.length > 0 && <button onClick={() => {if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;}} title="New conversation" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
+              onMouseEnter={e => e.currentTarget.style.color=G.teal}
+              onMouseLeave={e => e.currentTarget.style.color=G.muted}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>}
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
               onMouseEnter={e => e.currentTarget.style.color=G.teal}
               onMouseLeave={e => e.currentTarget.style.color=G.muted}>
@@ -1531,9 +1567,13 @@ export default function App() {
             )}
 
             {messages.map((m,i) => m.isTammy ? (
-              <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",position:"relative"}} className="tammy-msg">
                 <TammyAvatar size={24}/>
                 <div style={{flex:1,padding:"10px 13px",background:G.bg,border:`1px solid ${G.border}`,borderRadius:"2px 12px 12px 12px",fontSize:12.5,color:G.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.text}</div>
+                {m.text && <button onClick={() => {navigator.clipboard.writeText(m.text);const btn=document.querySelector(`[data-copy="${i}"]`);if(btn){btn.textContent="Copied!";setTimeout(()=>btn.textContent="Copy",1500);}}} data-copy={i}
+                  style={{position:"absolute",top:2,right:2,padding:"2px 6px",borderRadius:4,border:"none",background:G.borderLight,color:G.dim,fontSize:9,cursor:"pointer",fontFamily:"inherit",opacity:0,transition:"opacity 0.15s"}}
+                  onMouseEnter={e => e.currentTarget.style.opacity=1}
+                >Copy</button>}
               </div>
             ) : (
               <div key={i} style={{display:"flex",justifyContent:"flex-end"}}>
@@ -1588,7 +1628,7 @@ export default function App() {
               onBlur={e => e.currentTarget.style.borderColor=G.border}
               autoFocus/>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14}}>
-              <div style={{fontSize:11,color:G.dim}}>{messages.length} message{messages.length !== 1 ? "s" : ""} in this conversation</div>
+              <div style={{fontSize:11,color:G.dim}}>{messages.length ? `Includes ${messages.length} message${messages.length !== 1 ? "s" : ""} from ${mod.label}` : "No conversation to attach"}</div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={() => {setFbOpen(false);setFbText("");}} style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
                 <button onClick={submitFeedback} disabled={!fbText.trim()||fbSending}
@@ -1608,7 +1648,7 @@ export default function App() {
         </div>
       )}
 
-      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
+      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}`}</style>
     </div>
   );
 }
