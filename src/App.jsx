@@ -590,31 +590,64 @@ export default function App() {
       + "\n\n" + getCtx()
       + "\n\nToday: " + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("Timed out after 90s. Please try again.")), 90000));
-    const fetcher = (async () => {
+    try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-opus-4-6", max_tokens: 1000, system: sys, messages: [...convRef.current] }),
       });
-      return await res.text();
-    })();
 
-    try {
-      const raw = await Promise.race([fetcher, timeout]);
-      const data = JSON.parse(raw);
-      if (data.error) {
-        convRef.current.push({ role: "assistant", content: data.error.message });
-        setMessages(p => [...p, { text: "Error: " + data.error.message, isTammy: true }]);
-      } else {
-        const t = data.content?.map(b => b.text || "").join("") || "Empty response.";
-        convRef.current.push({ role: "assistant", content: t });
-        setMessages(p => [...p, { text: t, isTammy: true }]);
+      // Non-streaming fallback (error responses come as JSON)
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("text/event-stream")) {
+        const data = JSON.parse(await res.text());
+        if (data.error) {
+          convRef.current.push({ role: "assistant", content: data.error.message });
+          setMessages(p => [...p, { text: "Error: " + data.error.message, isTammy: true }]);
+        } else {
+          const t = data.content?.map(b => b.text || "").join("") || "Empty response.";
+          convRef.current.push({ role: "assistant", content: t });
+          setMessages(p => [...p, { text: t, isTammy: true }]);
+        }
+        setLoading(false);
+        setTimeout(() => inputRef.current?.focus(), 100);
+        return;
       }
+
+      // Streaming: add an empty Tammy message and fill it as tokens arrive
+      setMessages(p => [...p, { text: "", isTammy: true }]);
+      setLoading(false);
+      let fullText = "";
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const evt = JSON.parse(payload);
+            if (evt.type === "content_block_delta" && evt.delta?.text) {
+              fullText += evt.delta.text;
+              setMessages(p => { const u = [...p]; u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+            }
+          } catch {}
+        }
+      }
+      if (!fullText) fullText = "Empty response.";
+      convRef.current.push({ role: "assistant", content: fullText });
+      setMessages(p => { const u = [...p]; u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
     } catch (e) {
       setMessages(p => [...p, { text: e.message, isTammy: true }]);
+      setLoading(false);
     }
-    setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 

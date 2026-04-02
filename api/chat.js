@@ -25,12 +25,31 @@ export default async function handler(req, res) {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({ model, max_tokens, system, messages }),
+      body: JSON.stringify({ model, max_tokens, system, messages, stream: true }),
     });
 
-    const data = await response.text();
-    res.setHeader("Content-Type", "application/json");
-    return res.status(response.status).send(data);
+    if (!response.ok) {
+      const errText = await response.text();
+      res.setHeader("Content-Type", "application/json");
+      return res.status(response.status).send(errText);
+    }
+
+    // Stream SSE back to the client
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      res.write(chunk);
+    }
+
+    return res.end();
   } catch (err) {
     return res.status(500).json({ error: { message: err.message } });
   }
