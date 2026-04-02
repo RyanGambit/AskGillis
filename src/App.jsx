@@ -102,11 +102,54 @@ const METHODOLOGY_ITEMS = [
   {title:"SWOT by Segment",desc:"Do a SWOT for each competitor by market segment. Vanilla is not a sales strategy.",color:G.lilac},
 ];
 
-const SHARPENER_DRILLS = [
-  {type:"Opening Statement",scenario:"You're calling a general contractor who just won the bid for a new recreation complex 2 miles from your hotel. Crews will need rooms for 6+ months. Write your opening statement."},
-  {type:"Objection Handling",scenario:"A prospect says: 'We already work with the Hampton Inn down the road and our guys are happy there.' Use the 4A model to respond."},
-  {type:"Business Conversation",scenario:"Rewrite this sales pitch as a business conversation: 'Hi, I'm calling from the Courtyard Marriott. We're a newly renovated hotel with free breakfast, parking, and a fitness center. Do you have any travel needs?'"},
-  {type:"Qualifying Questions",scenario:"You're meeting with a corporate travel manager whose company is expanding with 3 new distribution centers. Draft 4 qualifying questions: Business Needs, Competition, Decision Making, Event Logistics."},
+const SHARPENER_CATEGORIES = [
+  {
+    category:"Opening Statements",desc:"30 seconds to earn their attention. No selling in the opener.",color:"#1ABBA6",
+    items:[
+      {label:"Construction company lead",scenario:"A general contractor just won the bid for a new recreation complex 2 miles from your hotel. Crews will need rooms for 6+ months. Write your opening statement."},
+      {label:"Corporate travel manager",scenario:"You found out a Fortune 500 company is opening a regional office 10 minutes from your property. You have the travel manager's name from LinkedIn. Write your opening statement."},
+      {label:"Sports team coordinator",scenario:"A college basketball tournament is coming to your city in 3 months. You found the athletics coordinator's contact through the CVB. Write your opening statement."},
+      {label:"Warm referral",scenario:"Your GM just told you that a guest at breakfast mentioned their company is relocating 50 employees to the area over the next 6 months. You got their card. Write your opening statement."},
+      {label:"Re-engaging a lost account",scenario:"A company that used to book 40 room nights a month stopped 6 months ago. You don't know why. You're calling the old contact. Write your opening statement."},
+    ]
+  },
+  {
+    category:"Objection Handling",desc:"Use the 4A model: Acknowledge, Ask, Answer, Accept.",color:"#7C6BC4",
+    items:[
+      {label:"\"Send me your info\"",scenario:"You're 15 seconds into a cold call and the prospect says 'Just send me your info and I'll take a look.' Respond using the 4A model."},
+      {label:"\"We're happy with our current hotel\"",scenario:"A corporate travel manager says 'We've been using the Hilton downtown for years and everyone's happy.' Respond using the 4A model."},
+      {label:"\"Your rate is too high\"",scenario:"You quoted $139/night for a group block and the prospect says 'That's way above our budget. The Hampton down the road is at $109.' Respond."},
+      {label:"\"We don't have any upcoming needs\"",scenario:"A prospect says 'We really don't have anything coming up right now.' You know their industry typically has seasonal travel. Respond."},
+      {label:"\"I need to run this by my boss\"",scenario:"You thought you were talking to the decision maker but they say 'This sounds good but I'd need to get approval from our VP of Operations.' Respond."},
+    ]
+  },
+  {
+    category:"Business vs Sales Conversation",desc:"Rewrite the pitch. Lead with their business, not your hotel.",color:"#E8875B",
+    items:[
+      {label:"Fix the features pitch",scenario:"Rewrite this as a business conversation: 'Hi, I'm calling from the Courtyard Marriott. We're a newly renovated hotel with free breakfast, parking, and a fitness center. Do you have any travel needs in our area?'"},
+      {label:"Fix the rate pitch",scenario:"Rewrite this as a business conversation: 'Hi, I wanted to let you know we're running a special corporate rate of $119 per night through the end of the quarter. Can I send you our rate sheet?'"},
+      {label:"Fix the group pitch",scenario:"Rewrite this as a business conversation: 'We have a great ballroom that seats 200 and we can offer complimentary AV for groups over 50. Would you like to schedule a site tour?'"},
+      {label:"Fix the follow-up email",scenario:"Rewrite this follow-up email as a business conversation: 'Hi, I'm following up on my voicemail from last week. I'd love to tell you about our hotel and see if there's an opportunity to earn your business.'"},
+    ]
+  },
+  {
+    category:"Qualifying Questions",desc:"Go deeper. Business Needs, Competition, Decision Making, Event Logistics.",color:"#D4A843",
+    items:[
+      {label:"Corporate relocation",scenario:"A company is moving 30 employees to your market over the next 4 months. You're meeting with their HR director. Write 4 qualifying questions, one from each category: Business Needs, Competition, Decision Making, Event Logistics."},
+      {label:"Wedding season",scenario:"A wedding planner has inquired about room blocks for upcoming weddings. Before quoting, write 4 qualifying questions across all four categories."},
+      {label:"Government contract",scenario:"A government agency is sending inspectors to your area for a 3-month project. Write 4 qualifying questions across all four categories."},
+      {label:"Annual conference",scenario:"A mid-size company holds an annual leadership retreat for 75 people. They're exploring new venues. Write 4 qualifying questions across all four categories."},
+    ]
+  },
+  {
+    category:"Voicemails & Follow-Up",desc:"You get 30 seconds. Make it count.",color:"#3B82F6",
+    items:[
+      {label:"First voicemail to a cold prospect",scenario:"You're calling a prospect for the first time. They didn't pick up. Leave a voicemail that's under 30 seconds and gives them a reason to call back. Don't pitch your hotel."},
+      {label:"Third voicemail, no callback yet",scenario:"This is your third voicemail to the same prospect. The first two got no response. Leave a message that changes the angle without sounding desperate."},
+      {label:"Follow-up after a good call",scenario:"You had a strong discovery call yesterday. The prospect seemed engaged. Write a follow-up email that reinforces the conversation without being pushy. Keep it under 100 words."},
+      {label:"Re-engage after going silent",scenario:"A prospect you were in active conversation with hasn't responded in 3 weeks. Write a short re-engagement message that creates a reason to reconnect."},
+    ]
+  },
 ];
 
 const SOCIAL_ITEMS = [
@@ -190,7 +233,7 @@ const MODE_PROMPTS = {
   outreach:"Help with outreach using call planner. Reference their target details if entered. Be specific and actionable.",
   situation:"They have a situation. Validate in one sentence first, then coach. Be direct about what went wrong.",
   roleplay:"Set the scene, then become the prospect. Be realistic, slightly guarded, throw objections. Give brief specific feedback after.",
-  sharpener:"Give the drill. Wait for response. Brief feedback: one thing good, one thing to sharpen. Keep it tight.",
+  sharpener:"The seller picked a drill. Present the scenario clearly, then wait for their attempt. After they respond, give brief direct feedback: one thing they did well, one thing to sharpen. Stay under 100 words for feedback. If they say 'surprise me', pick a random drill type and give them a specific scenario. Keep the energy up. Quick workout, not a lecture.",
   social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
 };
@@ -415,7 +458,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [od, setOd] = useState({company:"",segment:"",contact:"",notes:""});
   const [rp, setRp] = useState({who:"",segment:"",objective:""});
-  const [drill] = useState(SHARPENER_DRILLS[Math.floor(Math.random()*SHARPENER_DRILLS.length)]);
+  // drill state removed — sharpener now uses categorized drills
   const [sessions, setSessions] = useState([]);
   const [teamData, setTeamData] = useState({});
   const [kbWords, setKbWords] = useState(0);
@@ -498,7 +541,6 @@ export default function App() {
     let c = "MODULE: " + (MODULES.find(m => m.id === activeModule)?.label || activeModule);
     if (activeModule === "outreach" && od.company) c += "\nTARGET: " + od.company + ". Segment: " + od.segment + ". Contact: " + od.contact + ". Notes: " + od.notes;
     if (activeModule === "roleplay" && rp.who) c += "\nROLE PLAY: Calling: " + rp.who + ". Segment: " + rp.segment + ". Objective: " + rp.objective;
-    if (activeModule === "sharpener") c += "\nDRILL: " + drill.type + " -- " + drill.scenario;
     return c;
   };
 
@@ -886,14 +928,44 @@ export default function App() {
           {/* Sharpener */}
           {mode === "seller" && activeModule === "sharpener" && (
             <div>
-              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Today's Drill</h2>
-              <p style={{fontSize:13,color:G.muted,margin:"0 0 24px"}}>5 minutes. One exercise. Get sharper.</p>
-              <div style={{background:G.white,border:`1.5px solid ${G.goldBorder}`,borderRadius:12,padding:"28px",position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${G.gold},${G.goldBorder})`}}/>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:G.gold,marginBottom:12}}>{drill.type}</div>
-                <div style={{fontSize:15,fontWeight:500,lineHeight:1.7,color:G.dark,marginBottom:20}}>{drill.scenario}</div>
-                <button onClick={() => {setChatOpen(true);sendMessage("I'm ready for the drill.");}} style={{padding:"12px 24px",borderRadius:9,border:"none",background:G.gold,color:"white",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Give it a shot</button>
-              </div>
+              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Daily Sharpener</h2>
+              <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 24px",maxWidth:540}}>Pick a drill. Give it your best shot. Tammy gives you feedback. Five minutes, real reps, real improvement.</p>
+
+              <button onClick={() => {
+                const allItems = SHARPENER_CATEGORIES.flatMap(c => c.items);
+                const pick = allItems[Math.floor(Math.random() * allItems.length)];
+                setChatOpen(true); sendMessage("Here's my drill:\n\n" + pick.scenario + "\n\nLet me give it a shot.");
+              }}
+                style={{width:"100%",padding:"16px 18px",borderRadius:10,border:`1.5px solid ${G.goldBorder}`,background:`linear-gradient(135deg,${G.goldLight},${G.white})`,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s",marginBottom:28}}
+                onMouseEnter={e => {e.currentTarget.style.borderColor=G.gold;e.currentTarget.style.background=G.goldLight;}}
+                onMouseLeave={e => {e.currentTarget.style.borderColor=G.goldBorder;e.currentTarget.style.background=`linear-gradient(135deg,${G.goldLight},${G.white})`;}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:18}}>&#9889;</span>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:G.dark}}>Surprise me</div>
+                    <div style={{fontSize:12,color:G.muted}}>Random drill from any category. Tammy picks.</div>
+                  </div>
+                </div>
+              </button>
+
+              {SHARPENER_CATEGORIES.map((cat, ci) => (
+                <div key={ci} style={{marginTop:ci > 0 ? 28 : 0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:2}}>{cat.category}</div>
+                  <div style={{fontSize:12,color:G.dim,marginBottom:10}}>{cat.desc}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {cat.items.map((item, si) => (
+                      <button key={si} onClick={() => {
+                        setChatOpen(true); sendMessage("Here's my drill:\n\n" + item.scenario + "\n\nLet me give it a shot.");
+                      }}
+                        style={{padding:"12px 16px",borderRadius:8,border:`1px solid ${G.border}`,borderLeft:`3px solid ${cat.color}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s",width:"100%"}}
+                        onMouseEnter={e => {e.currentTarget.style.borderColor=cat.color;e.currentTarget.style.background=cat.color+"0D";}}
+                        onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.borderLeftColor=cat.color;e.currentTarget.style.background=G.white;}}>
+                        <div style={{fontSize:13,fontWeight:600,color:G.dark}}>{item.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -998,7 +1070,7 @@ export default function App() {
                     :activeModule==="outreach"?["Help me write an opening statement","What qualifying questions should I ask?","Draft an outreach email"]
                     :activeModule==="situation"?["I keep hitting the same objection","My pipeline is drying up","I had a rough call"]
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
-                    :activeModule==="sharpener"?["I'm ready for the drill","Give me a harder one","Why does this matter?"]
+                    :activeModule==="sharpener"?["Surprise me with a drill","Practice opening statements","Work on objection handling"]
                     :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
