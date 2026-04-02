@@ -50,12 +50,12 @@ const SHARPENER_DRILLS = [
 ];
 
 const MODE_PROMPTS = {
-  onboarding:"The user is going through onboarding. Guide step by step. Teach through examples.",
-  outreach:"Help with outreach using call planner. Reference their target details if entered.",
-  situation:"They have a situation. Validate frustration first, then coach. Use 4A for objections.",
-  roleplay:"They want to practice. Once scene is set, become the prospect. Be realistic. Give feedback after.",
-  sharpener:"Give the exercise, wait for response, give brief direct feedback.",
-  methodology:"Explain concepts through real hotel sales scenarios.",
+  onboarding:"They're new and probably overwhelmed. Give ONE thing to focus on in 2-3 sentences. Ask one question. Do NOT give a roadmap or overview of the whole program. Do NOT front-load context.",
+  outreach:"Help with outreach using call planner. Reference their target details if entered. Be specific and actionable.",
+  situation:"They have a situation. Validate in one sentence first, then coach. Be direct about what went wrong.",
+  roleplay:"Set the scene, then become the prospect. Be realistic, slightly guarded, throw objections. Give brief specific feedback after.",
+  sharpener:"Give the drill. Wait for response. Brief feedback: one thing good, one thing to sharpen. Keep it tight.",
+  methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
 };
 
 // ---- UI Components ----
