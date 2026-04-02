@@ -597,18 +597,11 @@ export default function App() {
         body: JSON.stringify({ model: "claude-opus-4-6", max_tokens: 1000, system: sys, messages: [...convRef.current] }),
       });
 
-      // Non-streaming fallback (error responses come as JSON)
-      const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("text/event-stream")) {
+      // Error response — not streaming
+      if (!res.ok) {
         const data = JSON.parse(await res.text());
-        if (data.error) {
-          convRef.current.push({ role: "assistant", content: data.error.message });
-          setMessages(p => [...p, { text: "Error: " + data.error.message, isTammy: true }]);
-        } else {
-          const t = data.content?.map(b => b.text || "").join("") || "Empty response.";
-          convRef.current.push({ role: "assistant", content: t });
-          setMessages(p => [...p, { text: t, isTammy: true }]);
-        }
+        convRef.current.push({ role: "assistant", content: data.error?.message || "Error" });
+        setMessages(p => [...p, { text: "Error: " + (data.error?.message || "Unknown error"), isTammy: true }]);
         setLoading(false);
         setTimeout(() => inputRef.current?.focus(), 100);
         return;
@@ -618,32 +611,45 @@ export default function App() {
       setMessages(p => [...p, { text: "", isTammy: true }]);
       setLoading(false);
       let fullText = "";
+
+      // Read the stream as text chunks
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      const processLines = (text) => {
+        buffer += text;
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const payload = line.slice(6).trim();
-          if (payload === "[DONE]") continue;
+          if (!payload || payload === "[DONE]") continue;
           try {
             const evt = JSON.parse(payload);
             if (evt.type === "content_block_delta" && evt.delta?.text) {
               fullText += evt.delta.text;
-              setMessages(p => { const u = [...p]; u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+              setMessages(p => {
+                const u = p.slice();
+                u[u.length - 1] = { text: fullText, isTammy: true };
+                return u;
+              });
             }
           } catch {}
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        processLines(decoder.decode(value, { stream: true }));
       }
+      // Process any remaining buffer
+      if (buffer.trim()) processLines("\n");
+
       if (!fullText) fullText = "Empty response.";
       convRef.current.push({ role: "assistant", content: fullText });
-      setMessages(p => { const u = [...p]; u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+      setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
     } catch (e) {
       setMessages(p => [...p, { text: e.message, isTammy: true }]);
       setLoading(false);
