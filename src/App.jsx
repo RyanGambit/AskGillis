@@ -152,6 +152,36 @@ const SHARPENER_CATEGORIES = [
   },
 ];
 
+const HELP_TIPS = [
+  {title:"Be specific",body:"\"Help me with outreach\" gets you generic advice. \"I'm calling a construction company GM who just broke ground 3 miles from my Courtyard\" gets you a real game plan."},
+  {title:"Tell her your segment",body:"Corporate, construction, sports, SMERF, government \u2014 each one requires a different approach. The more Tammy knows about who you're targeting, the sharper her coaching."},
+  {title:"Share what happened",body:"If a call went sideways, walk her through it. What did you say? What did they say? The more detail you give, the more specific her feedback."},
+  {title:"Use the modules",body:"Don't just type into the chat. The modules give Tammy context about what you're trying to do. Outreach Support tells her you're prepping a call. Role Play tells her to become the prospect. The right module gets you better answers."},
+  {title:"Push back on her",body:"If her suggestion doesn't feel right for your situation, say so. \"That won't work because...\" gives her what she needs to adjust. She's coaching you, not lecturing you."},
+  {title:"Keep it conversational",body:"You don't need to write formal questions. Talk to her like you'd talk to a colleague. \"I've got a weird one for you\" works just as well as a detailed brief."},
+];
+
+const HELP_MODULE_GUIDE = [
+  {name:"Onboarding",when:"You're new to Gillis or hotel sales. Work through the checklist at your own pace.",color:G.teal},
+  {name:"Weekly Game Plan",when:"Monday morning. Figure out where your energy goes across your properties this week.",color:"#8B5CF6"},
+  {name:"Outreach Support",when:"You have a specific target and need to build your approach, opening statement, or email.",color:G.teal},
+  {name:"Situation",when:"Something happened and you need help. An objection, a stalled account, a rough call, or just a tough day.",color:G.lilac},
+  {name:"Role Play",when:"You want to practice before a real call. Tammy plays the prospect and gives you feedback after.",color:G.orange},
+  {name:"Daily Sharpener",when:"Five minutes to build your sales muscle. Pick a drill, give it a shot, get feedback.",color:G.gold},
+  {name:"LinkedIn & Social",when:"Writing connection requests, messages, posts, or engaging with prospects on LinkedIn.",color:"#3B82F6"},
+  {name:"Methodology",when:"You want to understand a Gillis framework. 4A model, call planner, business conversations, etc.",color:G.muted},
+];
+
+const HELP_FAQS = [
+  {q:"Does Tammy know about my specific hotel?",a:"Only if you tell her. She doesn't have access to your CRM or property data. But when you share details about your hotel, market, or prospects, she uses that context to give specific advice. The more you share, the better she gets."},
+  {q:"Are my conversations private?",a:"Your conversations are stored locally on your device for session history. They're not shared with other users. Your manager can see usage stats (which modules you're using and how often) but not the content of your conversations."},
+  {q:"Who is Tammy?",a:"Tammy Gillis is the founder of Gillis Sales with 28 years of hospitality sales experience. AskGillis is powered by her methodology, her book \"Room to Grow,\" and the training materials used across 350+ hotel properties. The AI is trained to coach the way she would."},
+  {q:"Can Tammy write emails and scripts for me?",a:"Yes. Use Outreach Support to prep calls and draft emails. Use LinkedIn & Social for connection requests and messages. Just give her context about who you're targeting and she'll draft something specific."},
+  {q:"What if Tammy gives me advice I disagree with?",a:"Push back. Tell her why it won't work for your situation. She'll adjust. This is a conversation, not a lecture."},
+  {q:"How is this different from ChatGPT?",a:"ChatGPT gives you generic sales advice. Tammy knows hotel sales specifically: the segments, the terminology, the objection patterns, the follow-up cadences, the reality of managing multiple properties. She coaches from the Gillis methodology, not generic best practices."},
+  {q:"I'm not a Gillis employee. Can I still use this?",a:"Yes. AskGillis works for any hotel salesperson. The methodology is universal to hospitality B2B sales. You don't need to know the Gillis framework in advance \u2014 Tammy teaches it to you through the coaching."},
+];
+
 const SOCIAL_ITEMS = [
   {
     category:"Your Profile",
@@ -479,6 +509,7 @@ export default function App() {
   };
   const [socialExpanded, setSocialExpanded] = useState(null);
   const [socialInput, setSocialInput] = useState("");
+  const [faqOpen, setFaqOpen] = useState(null);
 
   const kbRef = useRef(null);
   const scrollRef = useRef(null);
@@ -673,7 +704,7 @@ export default function App() {
   }
 
   // ---- PLATFORM ----
-  const mod = MODULES.find(m => m.id === activeModule);
+  const mod = MODULES.find(m => m.id === activeModule) || {id:"help",label:"Help & FAQ",icon:"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01",color:G.muted};
   const sB = "rgba(255,255,255,0.08)";
   const sT = "rgba(255,255,255,0.55)";
 
@@ -742,7 +773,15 @@ export default function App() {
           })}
         </div>}
 
-        <div style={{padding:"14px 20px",borderTop:`0.5px solid ${sB}`}}>
+        <div style={{padding:"6px 10px 0"}}>
+          <button onClick={() => setActiveModule("help")} style={{width:"100%",padding:"7px 14px",borderRadius:7,border:"none",background:activeModule==="help"?"rgba(255,255,255,0.06)":"transparent",cursor:"pointer",fontFamily:"inherit",color:activeModule==="help"?"rgba(255,255,255,0.7)":sT,fontSize:11.5,fontWeight:400,display:"flex",alignItems:"center",gap:8,textAlign:"left"}}
+            onMouseEnter={e => e.currentTarget.style.color="rgba(255,255,255,0.7)"}
+            onMouseLeave={e => e.currentTarget.style.color=activeModule==="help"?"rgba(255,255,255,0.7)":sT}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            Help & FAQ
+          </button>
+        </div>
+        <div style={{padding:"10px 20px",borderTop:`0.5px solid ${sB}`,marginTop:6}}>
           <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{userName}</div>
         </div>
       </div>
@@ -751,8 +790,8 @@ export default function App() {
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
         <div style={{padding:"12px 28px",borderBottom:`1px solid ${G.border}`,background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            {mode === "seller" && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
-            <span style={{fontSize:15,fontWeight:600}}>{mode === "manager" ? (mgrView === "kb" ? "Knowledge Base" : "Team Overview") : mod.label}</span>
+            {(mode === "seller" || activeModule === "help") && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
+            <span style={{fontSize:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (mgrView === "kb" ? "Knowledge Base" : "Team Overview") : mod.label}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
@@ -1038,6 +1077,67 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* Help & FAQ */}
+          {activeModule === "help" && (
+            <div style={{maxWidth:620}}>
+              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Help & FAQ</h2>
+              <p style={{fontSize:13,color:G.muted,margin:"0 0 32px"}}>Everything you need to know about using AskGillis.</p>
+
+              <div style={{marginBottom:36}}>
+                <div style={{fontSize:15,fontWeight:600,color:G.dark,marginBottom:10}}>What is AskGillis?</div>
+                <p style={{fontSize:13,color:G.text,lineHeight:1.8,margin:0}}>AskGillis is your AI-powered sales coach, built on 28 years of Gillis hospitality sales methodology. Tammy is available 24/7 to help you prepare for calls, handle objections, practice scenarios, plan your week, and sharpen your skills.</p>
+                <p style={{fontSize:13,color:G.text,lineHeight:1.8,margin:"10px 0 0"}}>She's not a generic chatbot. She knows hotel sales inside and out: the terminology, the segments, the grind of prospecting, and the Gillis way of doing things. Think of her as a senior colleague who's always available and never too busy to help.</p>
+              </div>
+
+              <div style={{marginBottom:36}}>
+                <div style={{fontSize:15,fontWeight:600,color:G.dark,marginBottom:16}}>How to get the best answers from Tammy</div>
+                <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                  {HELP_TIPS.map((tip, i) => (
+                    <div key={i} style={{padding:"14px 0",borderBottom:i < HELP_TIPS.length - 1 ? `1px solid ${G.borderLight}` : "none"}}>
+                      <div style={{fontSize:13,fontWeight:600,color:G.dark,marginBottom:4}}>{tip.title}</div>
+                      <div style={{fontSize:13,color:G.text,lineHeight:1.7}}>{tip.body}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{marginBottom:36}}>
+                <div style={{fontSize:15,fontWeight:600,color:G.dark,marginBottom:14}}>Module Guide</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {HELP_MODULE_GUIDE.map((m, i) => (
+                    <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:G.white,border:`1px solid ${G.border}`,borderRadius:8}}>
+                      <div style={{width:4,height:4,borderRadius:"50%",background:m.color,marginTop:7,flexShrink:0}}/>
+                      <div>
+                        <span style={{fontSize:13,fontWeight:600,color:G.dark}}>{m.name}</span>
+                        <span style={{fontSize:13,color:G.muted,marginLeft:8}}>{m.when}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:15,fontWeight:600,color:G.dark,marginBottom:14}}>FAQ</div>
+                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  {HELP_FAQS.map((faq, i) => {
+                    const open = faqOpen === i;
+                    return (
+                      <div key={i} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:8,overflow:"hidden"}}>
+                        <button onClick={() => setFaqOpen(open ? null : i)} style={{width:"100%",padding:"12px 16px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",textAlign:"left",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <span style={{fontSize:13,fontWeight:600,color:G.dark}}>{faq.q}</span>
+                          <span style={{fontSize:16,color:G.dim,flexShrink:0,marginLeft:12,transform:open?"rotate(180deg)":"rotate(0)",transition:"transform 0.2s"}}>&#9662;</span>
+                        </button>
+                        {open && (
+                          <div style={{padding:"0 16px 14px",fontSize:13,color:G.text,lineHeight:1.7}}>{faq.a}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1072,6 +1172,7 @@ export default function App() {
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
                     :activeModule==="sharpener"?["Surprise me with a drill","Practice opening statements","Work on objection handling"]
                     :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
+                    :activeModule==="help"?["How do I get started?","What module should I use?","Give me a quick tip"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
                     <button key={i} onClick={() => sendMessage(q)} style={{padding:"7px 11px",borderRadius:7,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:11.5,textAlign:"left",cursor:"pointer",fontFamily:"inherit"}}
