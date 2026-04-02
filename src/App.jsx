@@ -5,7 +5,7 @@ import { KNOWLEDGE_BASE } from "./knowledgebase.js";
 const INVITATION_CODE = "GILLIS2026";
 
 // ---- Feedback: paste your Google Apps Script web app URL here ----
-const FEEDBACK_SHEET_URL = "";
+const FEEDBACK_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFSCGAPoKO8xw9LFnuW-6nFdP1e65kCB2Bm0MUJjkxbj_Uj_CGLsq16bsJx1tSt6jL/exec";
 
 const G = {
   bg:"#F5F4F8", white:"#FFFFFF",
