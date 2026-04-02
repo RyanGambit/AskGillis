@@ -714,7 +714,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
-  const [userRole, setUserRole] = useState(() => { try { return localStorage.getItem("ag-role") || ""; } catch { return ""; } });
+  const [userRole, setUserRole] = useState("");
   const [mode, setMode] = useState("seller");
   const [mgrView, setMgrView] = useState("team");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -785,7 +785,7 @@ export default function App() {
     if (code.toUpperCase().trim() !== INVITATION_CODE) { setErr("Invalid invitation code."); return; }
     if (!email.includes("@")) { setErr("Please enter a valid email."); return; }
     // If role already stored, go straight to platform
-    const storedRole = localStorage.getItem("ag-role");
+    const storedRole = localStorage.getItem("ag-role-" + email.trim().toLowerCase());
     if (storedRole) {
       setUserRole(storedRole);
       setMode(storedRole === "manager" ? "manager" : "seller");
@@ -797,7 +797,7 @@ export default function App() {
 
   const selectRole = (role) => {
     setUserRole(role);
-    try { localStorage.setItem("ag-role", role); } catch {}
+    try { localStorage.setItem("ag-role-" + email.trim().toLowerCase(), role); } catch {}
     setMode(role === "manager" ? "manager" : "seller");
     setScreen("platform");
   };
