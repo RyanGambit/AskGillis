@@ -460,7 +460,7 @@ function ManagerDashboard({ teamData, userName, onSelectUser }) {
       <h2 style={{fontSize:22,fontWeight:600,margin:"0 0 4px"}}>Team Overview</h2>
       <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>Activity across your team. Updates as sellers use the platform.</p>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
+      <div className="stats-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
         {[{l:"Team members",v:users.length,c:G.purple},{l:"Active this week",v:`${activeWeek}`,s:users.length?`${Math.round(activeWeek/users.length*100)}%`:"",c:G.teal},{l:"Sessions this week",v:weekSessions,c:G.teal},{l:"Avg/seller this week",v:avgPerSeller,c:G.muted}].map((s,i) => (
           <div key={i} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"18px 16px"}}>
             <div style={{fontSize:11,color:G.muted,marginBottom:6,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</div>
@@ -561,7 +561,7 @@ function SellerDetail({ name, data, onBack }) {
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
+      <div className="stats-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
         {[{l:"Total sessions",v:data.sessions.length,c:G.purple},{l:"This week",v:weekSessions,c:G.teal},{l:"Top module",v:topMod?topMod.label:"—",c:topMod?topMod.color:G.dim,small:true},{l:"Total time",v:totalDuration>3600?Math.round(totalDuration/3600)+"h":Math.round(totalDuration/60)+"m",c:G.muted}].map((s,i) => (
           <div key={i} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"18px 16px"}}>
             <div style={{fontSize:11,color:G.muted,marginBottom:6,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</div>
@@ -658,7 +658,7 @@ function PatternsView({ teamData }) {
       <h2 style={{fontSize:22,fontWeight:600,margin:"0 0 4px"}}>Patterns & Topics</h2>
       <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>What your team is working on this week.</p>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+      <div className="patterns-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
         <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px"}}>
           <div style={{fontSize:13,fontWeight:600,marginBottom:14}}>Top Topics This Week</div>
           {topCats.length ? topCats.slice(0,8).map(([cat,count],i) => (
@@ -837,6 +837,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef(null);
   const [faqOpen, setFaqOpen] = useState(null);
+  const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = winW < 768;
+  const isTablet = winW >= 768 && winW < 1024;
+  const isCompact = winW < 1024;
 
   const kbRef = useRef(null);
   const scrollRef = useRef(null);
@@ -889,6 +894,13 @@ export default function App() {
       .sort((a,b) => b.score - a.score)
       .slice(0, 12);
   }, [searchQuery, searchIndex]);
+
+  // Responsive: track window width
+  useEffect(() => {
+    const onResize = () => setWinW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Cmd+K / Ctrl+K global search shortcut
   useEffect(() => {
@@ -1193,7 +1205,7 @@ export default function App() {
             <p style={{color:"rgba(255,255,255,0.7)",fontSize:16,fontWeight:500,margin:"0 0 4px"}}>Welcome, {userName}.</p>
             <p style={{color:"rgba(255,255,255,0.4)",fontSize:14,margin:0}}>How will you be using AskGillis?</p>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:16}}>
             <button onClick={() => selectRole("seller")} style={{padding:"32px 24px",borderRadius:14,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all 0.2s"}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.background="rgba(26,187,166,0.08)";}}
               onMouseLeave={e => {e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="rgba(255,255,255,0.04)";}}>
@@ -1220,9 +1232,11 @@ export default function App() {
   const sT = "rgba(255,255,255,0.55)";
 
   return (
-    <div style={{display:"flex",height:"100vh",color:G.dark,background:G.bg}}>
+    <div style={{display:"flex",height:"100dvh",color:G.dark,background:G.bg,position:"relative",overflow:"hidden"}}>
+      {/* SIDEBAR BACKDROP (mobile/tablet) */}
+      {isCompact && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:90}}/>}
       {/* SIDEBAR */}
-      <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0}}>
+      <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
         <div style={{padding:"18px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",alignItems:"center",gap:10}}>
           <GillisLogo size={28}/>
           <div><div style={{fontSize:15,fontWeight:600,color:"#E5E5E5"}}>AskGillis</div><div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div></div>
@@ -1235,13 +1249,13 @@ export default function App() {
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Training</div>
             {MODULES.filter(m => m.id !== "hub").map(m => {
               const a = activeModule === m.id;
-              return <button key={m.id} onClick={() => setActiveModule(m.id)} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
+              return <button key={m.id} onClick={() => {setActiveModule(m.id);if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
                 <NavIcon path={m.icon} color={a?G.teal:sT} size={16}/>{m.label}
               </button>;
             })}
             <div style={{borderTop:`0.5px solid ${sB}`,margin:"10px 12px 8px",paddingTop:10}}>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",marginBottom:8}}>Resources</div>
-              {(() => { const m = MODULES.find(x => x.id === "hub"); const a = activeModule === "hub"; return m ? <button onClick={() => setActiveModule("hub")} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(255,255,255,0.06)":"transparent",color:a?"rgba(255,255,255,0.7)":sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
+              {(() => { const m = MODULES.find(x => x.id === "hub"); const a = activeModule === "hub"; return m ? <button onClick={() => {setActiveModule("hub");if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(255,255,255,0.06)":"transparent",color:a?"rgba(255,255,255,0.7)":sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
                 <NavIcon path={m.icon} color={a?"rgba(255,255,255,0.7)":sT} size={16}/>{m.label}
               </button> : null; })()}
             </div>
@@ -1273,7 +1287,7 @@ export default function App() {
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Dashboard</div>
             {[{id:"team",label:"Team Overview"},{id:"patterns",label:"Patterns & Topics"},{id:"kb",label:"Knowledge Base"}].map(n => {
               const a = mgrView === n.id && !selectedUser && activeModule !== "help";
-              return <button key={n.id} onClick={() => {setMgrView(n.id);setSelectedUser(null);setActiveModule("__mgr");}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
+              return <button key={n.id} onClick={() => {setMgrView(n.id);setSelectedUser(null);setActiveModule("__mgr");if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
             })}
           </div>
           <div style={{padding:"10px 10px"}}>
@@ -1284,7 +1298,7 @@ export default function App() {
         </>}
 
         <div style={{padding:"6px 10px 0"}}>
-          <button onClick={() => setActiveModule("help")} style={{width:"100%",padding:"7px 14px",borderRadius:7,border:"none",background:activeModule==="help"?"rgba(255,255,255,0.06)":"transparent",cursor:"pointer",fontFamily:"inherit",color:activeModule==="help"?"rgba(255,255,255,0.7)":sT,fontSize:11.5,fontWeight:400,display:"flex",alignItems:"center",gap:8,textAlign:"left"}}
+          <button onClick={() => {setActiveModule("help");if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"7px 14px",borderRadius:7,border:"none",background:activeModule==="help"?"rgba(255,255,255,0.06)":"transparent",cursor:"pointer",fontFamily:"inherit",color:activeModule==="help"?"rgba(255,255,255,0.7)":sT,fontSize:11.5,fontWeight:400,display:"flex",alignItems:"center",gap:8,textAlign:"left"}}
             onMouseEnter={e => e.currentTarget.style.color="rgba(255,255,255,0.7)"}
             onMouseLeave={e => e.currentTarget.style.color=activeModule==="help"?"rgba(255,255,255,0.7)":sT}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
@@ -1306,18 +1320,20 @@ export default function App() {
 
       {/* CENTER CONTENT */}
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-        <div style={{padding:"12px 28px",borderBottom:`1px solid ${G.border}`,background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div style={{padding:isMobile?"10px 14px":"12px 28px",borderBottom:`1px solid ${G.border}`,background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            {(mode === "seller" || activeModule === "help") && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
-            <span style={{fontSize:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (selectedUser ? selectedUser : mgrView === "kb" ? "Knowledge Base" : mgrView === "patterns" ? "Patterns & Topics" : "Team Overview") : mod.label}</span>
+            {isCompact && <button onClick={() => setSidebarOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",color:G.dark}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>}
+            {!isCompact && (mode === "seller" || activeModule === "help") && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
+            <span style={{fontSize:isMobile?14:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (selectedUser ? selectedUser : mgrView === "kb" ? "Knowledge Base" : mgrView === "patterns" ? "Patterns & Topics" : "Team Overview") : mod.label}</span>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <button onClick={() => {setSearchOpen(true);setSearchQuery("");}} title="Search (⌘K)" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
+          <div style={{display:"flex",alignItems:"center",gap:isMobile?4:8}}>
+            <button onClick={() => {setSearchOpen(true);setSearchQuery("");}} title="Search" style={{padding:isMobile?"6px":"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
               onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              Search
-              <span style={{fontSize:9,color:G.dim,marginLeft:2}}>&#8984;K</span>
+              {!isMobile && <>Search<span style={{fontSize:9,color:G.dim,marginLeft:2}}>&#8984;K</span></>}
             </button>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
@@ -1325,11 +1341,11 @@ export default function App() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Feedback
             </button>
-            {!chatOpen && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
+            {!chatOpen && !isMobile && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
           </div>
         </div>
 
-        <div style={{flex:1,overflowY:"auto",padding:(mode==="manager" && activeModule!=="help")?"0":"28px 36px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:(mode==="manager" && activeModule!=="help")?"0":isMobile?"20px 16px":"28px 36px",paddingBottom:isMobile?"80px":"28px"}}>
           {/* Manager views */}
           {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName} onSelectUser={name => setSelectedUser(name)}/>}
           {mode === "manager" && activeModule !== "help" && selectedUser && teamData[selectedUser] && <SellerDetail name={selectedUser} data={teamData[selectedUser]} onBack={() => setSelectedUser(null)}/>}
@@ -1598,7 +1614,7 @@ export default function App() {
             <div>
               <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Gillis Methodology</h2>
               <p style={{fontSize:13,color:G.muted,margin:"0 0 24px"}}>Click any to explore with Tammy.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12}}>
                 {METHODOLOGY_ITEMS.map((m,i) => (
                   <button key={i} onClick={() => {setChatOpen(true);sendMessage(`Explain ${m.title} with a real hotel sales example.`);}}
                     style={{padding:"20px 18px",borderRadius:10,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s"}}
@@ -1737,7 +1753,7 @@ export default function App() {
 
       {/* TAMMY CHAT PANEL */}
       {chatOpen && (
-        <div style={{width:420,borderLeft:`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{...(isCompact?{position:"fixed",top:0,right:0,bottom:0,width:isMobile?"100%":420,zIndex:85,boxShadow:"-4px 0 20px rgba(0,0,0,0.15)"}:{width:420,flexShrink:0}),borderLeft:isCompact?"none":`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column"}}>
           <div style={{padding:"12px 16px",borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <TammyAvatar size={30}/>
             <div style={{flex:1}}>
@@ -1822,6 +1838,13 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MOBILE FLOATING TAMMY BUTTON */}
+      {isMobile && !chatOpen && (
+        <button onClick={() => setChatOpen(true)} style={{position:"fixed",bottom:20,right:16,width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,border:"none",boxShadow:"0 4px 16px rgba(26,187,166,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:80}}>
+          <TammyAvatar size={32}/>
+        </button>
       )}
 
       {/* SEARCH OVERLAY */}
@@ -1926,7 +1949,7 @@ export default function App() {
         </div>
       )}
 
-      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}`}</style>
+      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
 }
