@@ -607,12 +607,29 @@ export default function App() {
         return;
       }
 
-      // Streaming: add an empty Tammy message and fill it as tokens arrive
+      // Streaming with smooth typewriter effect
       setMessages(p => [...p, { text: "", isTammy: true }]);
       setLoading(false);
       let fullText = "";
+      let displayedText = "";
+      let typeTimer = null;
 
-      // Read the stream as text chunks
+      const updateDisplay = (final) => {
+        if (typeTimer) cancelAnimationFrame(typeTimer);
+        const tick = () => {
+          if (displayedText.length < fullText.length) {
+            // Release a few characters per frame for smooth typing feel
+            const charsPerTick = Math.max(1, Math.ceil((fullText.length - displayedText.length) / 8));
+            displayedText = fullText.slice(0, displayedText.length + charsPerTick);
+            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: displayedText, isTammy: true }; return u; });
+            typeTimer = requestAnimationFrame(tick);
+          } else if (final) {
+            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+          }
+        };
+        typeTimer = requestAnimationFrame(tick);
+      };
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -629,11 +646,7 @@ export default function App() {
             const evt = JSON.parse(payload);
             if (evt.type === "content_block_delta" && evt.delta?.text) {
               fullText += evt.delta.text;
-              setMessages(p => {
-                const u = p.slice();
-                u[u.length - 1] = { text: fullText, isTammy: true };
-                return u;
-              });
+              updateDisplay(false);
             }
           } catch {}
         }
@@ -644,10 +657,22 @@ export default function App() {
         if (done) break;
         processLines(decoder.decode(value, { stream: true }));
       }
-      // Process any remaining buffer
       if (buffer.trim()) processLines("\n");
 
       if (!fullText) fullText = "Empty response.";
+      // Flush remaining characters smoothly then finalize
+      await new Promise(resolve => {
+        const flush = () => {
+          if (displayedText.length < fullText.length) {
+            const charsPerTick = Math.max(1, Math.ceil((fullText.length - displayedText.length) / 4));
+            displayedText = fullText.slice(0, displayedText.length + charsPerTick);
+            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: displayedText, isTammy: true }; return u; });
+            requestAnimationFrame(flush);
+          } else { resolve(); }
+        };
+        if (typeTimer) cancelAnimationFrame(typeTimer);
+        requestAnimationFrame(flush);
+      });
       convRef.current.push({ role: "assistant", content: fullText });
       setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
     } catch (e) {
