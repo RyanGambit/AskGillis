@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { SYSTEM_PROMPT } from "./prompt.js";
 import { KNOWLEDGE_BASE } from "./knowledgebase.js";
+import { OPERATIONAL_KB } from "./operational-kb.js";
 
 const INVITATION_CODE = "GILLIS2026";
 
@@ -27,6 +28,7 @@ const MODULES = [
   {id:"sharpener",label:"Daily Sharpener",icon:"M13 2L3 14h9l-1 8 10-12h-9l1-8z",color:G.gold},
   {id:"social",label:"LinkedIn & Social",icon:"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",color:"#3B82F6"},
   {id:"methodology",label:"Methodology",icon:"M4 6h16M4 10h16M4 14h10M4 18h7",color:G.muted},
+  {id:"hub",label:"Gillis Hub",icon:"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",color:"#6B7280"},
 ];
 
 const ONBOARDING_ITEMS = [
@@ -152,6 +154,55 @@ const SHARPENER_CATEGORIES = [
   },
 ];
 
+const HUB_CATEGORIES = [
+  {
+    category:"Systems & Tools",
+    items:[
+      {label:"How do I access Salesforce?",prompt:"How do I access Salesforce? What's the login URL and who do I contact if I'm locked out?"},
+      {label:"Delphi / Event Temple access",prompt:"How do I get access to Delphi or Event Temple? Who sets that up?"},
+      {label:"Setting up my email and calendar",prompt:"How do I set up my Gillis email and calendar? What systems do I need on my computer?"},
+      {label:"CRM help and troubleshooting",prompt:"I'm having trouble with the CRM. Who do I contact for help?"},
+      {label:"Where do I find brand assets?",prompt:"Where can I find brand logos, templates, and marketing materials for my hotels?"},
+    ]
+  },
+  {
+    category:"HR & Policies",
+    items:[
+      {label:"Where do I submit my expense report?",prompt:"How do I submit an expense report at Gillis? What's the process and where's the form?"},
+      {label:"PTO and time-off policy",prompt:"What's the PTO policy at Gillis? How do I request time off?"},
+      {label:"Health and safety policies",prompt:"Where do I find Gillis health and safety policies?"},
+      {label:"Employee referral program",prompt:"Tell me about the Gillis employee referral program. How does it work and what's the bonus?"},
+      {label:"Hotel lead referral program",prompt:"How does the hotel lead referral program work? What do I get for referring a new hotel client?"},
+    ]
+  },
+  {
+    category:"Compensation & Incentives",
+    items:[
+      {label:"Quarterly incentive plan",prompt:"Explain the current quarterly incentive plan. How is it structured and how do I qualify?"},
+      {label:"Kudos program",prompt:"What's the Kudos program and how does it work?"},
+      {label:"How is my performance measured?",prompt:"What metrics and criteria are used to evaluate my performance as a Gillis seller?"},
+    ]
+  },
+  {
+    category:"Contacts & Support",
+    items:[
+      {label:"Who's my RDOS?",prompt:"How do I find out who my RDOS is and how to reach them?"},
+      {label:"IT support",prompt:"How do I contact IT support at Gillis? What's the process for tech issues?"},
+      {label:"HR contact",prompt:"How do I reach HR at Gillis?"},
+      {label:"Who do I talk to about...?",prompt:"I have a question but I don't know who to ask. Can you help me figure out the right person?"},
+    ]
+  },
+  {
+    category:"Hotel Operations",
+    items:[
+      {label:"Hotel onboarding process",prompt:"Walk me through what happens when Gillis onboards a new hotel. What's the timeline and who's involved?"},
+      {label:"Communication guide and tone",prompt:"What's the Gillis communication guide? How should I represent the brand in emails and calls?"},
+      {label:"Brand infographic and one-pager",prompt:"Tell me about the Gillis brand. What's our positioning and value proposition?"},
+      {label:"Client journey overview",prompt:"Walk me through the Gillis client journey from first contact to long-term partnership."},
+    ]
+  },
+];
+
 const HELP_TIPS = [
   {title:"Be specific",body:"\"Help me with outreach\" gets you generic advice. \"I'm calling a construction company GM who just broke ground 3 miles from my Courtyard\" gets you a real game plan."},
   {title:"Tell her your segment",body:"Corporate, construction, sports, SMERF, government \u2014 each one requires a different approach. The more Tammy knows about who you're targeting, the sharper her coaching."},
@@ -170,6 +221,7 @@ const HELP_MODULE_GUIDE = [
   {name:"Daily Sharpener",when:"Five minutes to build your sales muscle. Pick a drill, give it a shot, get feedback.",color:G.gold},
   {name:"LinkedIn & Social",when:"Writing connection requests, messages, posts, or engaging with prospects on LinkedIn.",color:"#3B82F6"},
   {name:"Methodology",when:"You want to understand a Gillis framework. 4A model, call planner, business conversations, etc.",color:G.muted},
+  {name:"Gillis Hub",when:"Systems, policies, contacts, expense reports, IT help, HR questions, and anything internal.",color:"#6B7280"},
 ];
 
 const HELP_FAQS = [
@@ -266,6 +318,7 @@ const MODE_PROMPTS = {
   sharpener:"The seller picked a drill. Present the scenario clearly, then wait for their attempt. After they respond, give brief direct feedback: one thing they did well, one thing to sharpen. Stay under 100 words for feedback. If they say 'surprise me', pick a random drill type and give them a specific scenario. Keep the energy up. Quick workout, not a lecture.",
   social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct. When drafting content for them (connection requests, messages, posts), write the full draft — word limit doesn't apply to drafted content.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
+  hub:"The user is asking about Gillis internal resources, policies, systems, or processes. Answer directly from what you know. If it's in the knowledge base, reference it. If you don't have the specific answer, say so clearly and suggest who they should contact. Don't coach, just inform. Keep it brief.",
 };
 
 // ---- UI Components ----
@@ -865,7 +918,8 @@ export default function App() {
       ? "\n\nUSER ROLE: This person is a manager/RDOS who oversees sellers. If they ask about their own selling, coach them normally. If they ask about managing their team, coaching their sellers, or how to help a struggling rep, shift to coaching-the-coach mode. Help them diagnose seller issues and suggest how to address them in one-on-ones."
       : "\n\nUSER ROLE: This person is a seller.";
     const sys = SYSTEM_PROMPT
-      + "\n\nKNOWLEDGE BASE:\n" + kbContent
+      + "\n\nSALES KNOWLEDGE BASE:\n" + kbContent
+      + "\n\nGILLIS OPERATIONS KNOWLEDGE BASE:\n" + OPERATIONAL_KB
       + roleContext
       + "\n\nMODE: " + (MODE_PROMPTS[activeModule] || "")
       + "\n\n" + getCtx()
@@ -1089,12 +1143,18 @@ export default function App() {
         {mode === "seller" ? <>
           <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Training</div>
-            {MODULES.map(m => {
+            {MODULES.filter(m => m.id !== "hub").map(m => {
               const a = activeModule === m.id;
               return <button key={m.id} onClick={() => setActiveModule(m.id)} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
                 <NavIcon path={m.icon} color={a?G.teal:sT} size={16}/>{m.label}
               </button>;
             })}
+            <div style={{borderTop:`0.5px solid ${sB}`,margin:"10px 12px 8px",paddingTop:10}}>
+              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",marginBottom:8}}>Resources</div>
+              {(() => { const m = MODULES.find(x => x.id === "hub"); const a = activeModule === "hub"; return m ? <button onClick={() => setActiveModule("hub")} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(255,255,255,0.06)":"transparent",color:a?"rgba(255,255,255,0.7)":sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
+                <NavIcon path={m.icon} color={a?"rgba(255,255,255,0.7)":sT} size={16}/>{m.label}
+              </button> : null; })()}
+            </div>
             {sessions.length > 0 && <>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"12px 12px 0",marginTop:8,marginBottom:8,borderTop:`0.5px solid ${sB}`}}>Recent</div>
               {sessions.slice(0,5).map((s,i) => {
@@ -1455,6 +1515,37 @@ export default function App() {
             </div>
           )}
 
+          {/* Gillis Hub */}
+          {mode === "seller" && activeModule === "hub" && (
+            <div>
+              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Gillis Hub</h2>
+              <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 20px",maxWidth:540}}>Your go-to for anything Gillis. Systems, policies, contacts, forms, and answers.</p>
+              <div style={{display:"flex",gap:8,marginBottom:28}}>
+                <input value={socialInput} onChange={e => setSocialInput(e.target.value)} placeholder="Search for anything..." onKeyDown={e => {if(e.key==="Enter"&&socialInput.trim()){setChatOpen(true);sendMessage(socialInput.trim());setSocialInput("");}}}
+                  style={{flex:1,padding:"11px 16px",border:`1px solid ${G.border}`,borderRadius:10,fontSize:13,fontFamily:"inherit",color:G.dark,outline:"none",background:G.white}}
+                  onFocus={e => e.currentTarget.style.borderColor="#6B7280"}
+                  onBlur={e => e.currentTarget.style.borderColor=G.border}/>
+                <button onClick={() => {if(socialInput.trim()){setChatOpen(true);sendMessage(socialInput.trim());setSocialInput("");}}} disabled={!socialInput.trim()}
+                  style={{padding:"11px 20px",borderRadius:10,border:"none",background:socialInput.trim()?"#6B7280":G.borderLight,color:socialInput.trim()?"white":G.dim,fontSize:13,fontWeight:600,cursor:socialInput.trim()?"pointer":"default",fontFamily:"inherit"}}>Ask</button>
+              </div>
+              {HUB_CATEGORIES.map((cat, ci) => (
+                <div key={ci} style={{marginTop:ci > 0 ? 24 : 0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>{cat.category}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    {cat.items.map((item, si) => (
+                      <button key={si} onClick={() => {setChatOpen(true);sendMessage(item.prompt);}}
+                        style={{padding:"12px 14px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s"}}
+                        onMouseEnter={e => {e.currentTarget.style.borderColor="#6B7280";e.currentTarget.style.background="#F9FAFB";}}
+                        onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.background=G.white;}}>
+                        <div style={{fontSize:12.5,fontWeight:500,color:G.dark}}>{item.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Help & FAQ */}
           {activeModule === "help" && (
             <div style={{maxWidth:620}}>
@@ -1555,6 +1646,7 @@ export default function App() {
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
                     :activeModule==="sharpener"?["Surprise me with a drill","Practice opening statements","Work on objection handling"]
                     :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
+                    :activeModule==="hub"?["Where do I submit my expense report?","How do I access Salesforce?","Who should I contact about...?"]
                     :activeModule==="help"?["How do I get started?","What module should I use?","Give me a quick tip"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
