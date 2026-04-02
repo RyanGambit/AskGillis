@@ -414,12 +414,31 @@ export default function App() {
     };
     try {
       if (FEEDBACK_SHEET_URL) {
-        await fetch(FEEDBACK_SHEET_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload),
-        });
+        // Use hidden form + iframe to avoid CORS issues with Apps Script redirects
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = FEEDBACK_SHEET_URL;
+        form.target = "fb_iframe";
+        form.style.display = "none";
+        const addField = (name, value) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+        };
+        Object.entries(payload).forEach(([k, v]) => addField(k, v));
+        let iframe = document.getElementById("fb_iframe");
+        if (!iframe) {
+          iframe = document.createElement("iframe");
+          iframe.name = "fb_iframe";
+          iframe.id = "fb_iframe";
+          iframe.style.display = "none";
+          document.body.appendChild(iframe);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
       }
       setFbToast("Feedback sent! Thank you.");
       setFbText("");
