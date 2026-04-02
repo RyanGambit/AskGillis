@@ -296,15 +296,38 @@ function saveSessions(s) {
 function loadTeamData() {
   try { return JSON.parse(localStorage.getItem("ag-team") || "{}"); } catch { return {}; }
 }
-function logTeamActivity(name, mod) {
+function logTeamActivity(name, mod, role, extra) {
   try {
     const d = loadTeamData();
-    if (!d[name]) d[name] = { sessions: [], lastActive: "" };
-    d[name].sessions.push({ module: mod, date: new Date().toISOString() });
+    if (!d[name]) d[name] = { sessions: [], lastActive: "", role: role || "seller" };
+    d[name].role = role || d[name].role || "seller";
+    d[name].sessions.push({ module: mod, date: new Date().toISOString(), category: extra?.category || mod, firstMessage: extra?.firstMessage || "", messageCount: extra?.messageCount || 0, duration: extra?.duration || 0 });
     d[name].sessions = d[name].sessions.slice(-200);
     d[name].lastActive = new Date().toISOString();
     localStorage.setItem("ag-team", JSON.stringify(d));
   } catch {}
+}
+
+// Session category detection
+function detectCategory(module, firstMsg) {
+  if (module === "onboarding") return "onboarding";
+  if (module === "outreach") return "call_prep";
+  if (module === "roleplay") return "role_play";
+  if (module === "sharpener") return "skill_drill";
+  if (module === "methodology") return "methodology_learning";
+  if (module === "social") return "social_selling";
+  if (module === "gameplan") return "weekly_planning";
+  if (module === "situation") {
+    const m = (firstMsg || "").toLowerCase();
+    if (m.includes("objection") || m.includes("send me your info") || m.includes("rate is too") || m.includes("call me back")) return "objection_handling";
+    if (m.includes("cold") || m.includes("voicemail") || m.includes("lost the deal")) return "stalled_account";
+    if (m.includes("call") || m.includes("transactional") || m.includes("questions to ask")) return "call_debrief";
+    if (m.includes("focus") || m.includes("tough week") || m.includes("rough")) return "motivation";
+    if (m.includes("pressure") || m.includes("numbers")) return "leadership_pressure";
+    if (m.includes("client") || m.includes("hotel isn't")) return "client_issue";
+    return "situation_general";
+  }
+  return module;
 }
 
 // KB: defaults from imported file, overrides stored in localStorage
@@ -323,39 +346,157 @@ function clearKBOverride() {
 }
 
 // ---- Manager Dashboard ----
-function ManagerDashboard({ teamData, userName }) {
+function ManagerDashboard({ teamData, userName, onSelectUser }) {
   const users = Object.entries(teamData);
   const now = new Date();
   const weekAgo = new Date(now - 7 * 864e5);
+  const monthAgo = new Date(now - 30 * 864e5);
   const totalSessions = users.reduce((s, [, u]) => s + u.sessions.length, 0);
   const weekSessions = users.reduce((s, [, u]) => s + u.sessions.filter(x => new Date(x.date) > weekAgo).length, 0);
-  const mc = {};
-  users.forEach(([, u]) => u.sessions.forEach(s => { mc[s.module] = (mc[s.module] || 0) + 1; }));
-  const topModules = Object.entries(mc).sort((a, b) => b[1] - a[1]);
-  const maxMC = topModules.length ? topModules[0][1] : 1;
   const activeWeek = users.filter(([, u]) => u.sessions.some(s => new Date(s.date) > weekAgo)).length;
+  const avgPerSeller = users.length ? Math.round(weekSessions / users.length * 10) / 10 : 0;
+
+  // Activity last 14 days
+  const dayBuckets = Array.from({length:14},(_,i) => {const d = new Date(now); d.setDate(d.getDate()-13+i); return d.toISOString().slice(0,10);});
+  const dayCounts = dayBuckets.map(day => users.reduce((s,[,u]) => s + u.sessions.filter(x => x.date?.slice(0,10) === day).length, 0));
+  const maxDay = Math.max(...dayCounts, 1);
+
+  // Insights
+  const insights = [];
+  users.forEach(([name, u]) => {
+    const da = Math.floor((now - new Date(u.lastActive)) / 864e5);
+    if (da >= 7) insights.push({type:"inactive",text:`${name} hasn't logged in for ${da} days`});
+  });
+  const catCounts = {};
+  users.forEach(([,u]) => u.sessions.filter(s => new Date(s.date) > weekAgo).forEach(s => { catCounts[s.category||s.module] = (catCounts[s.category||s.module]||0)+1; }));
+  const topCat = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+  if (topCat.length) insights.push({type:"pattern",text:`${topCat[0][0].replace(/_/g," ")} is the most common topic this week (${topCat[0][1]} sessions)`});
+  const unusedMods = MODULES.filter(m => !users.some(([,u]) => u.sessions.some(s => s.module === m.id && new Date(s.date) > weekAgo)));
+  if (unusedMods.length && unusedMods.length < MODULES.length) insights.push({type:"gap",text:`${unusedMods[0].label} had zero usage this week`});
 
   return (
-    <div style={{padding:"32px 40px",maxWidth:800}}>
+    <div style={{padding:"32px 40px",maxWidth:860}}>
       <h2 style={{fontSize:22,fontWeight:600,margin:"0 0 4px"}}>Team Overview</h2>
-      <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>Activity across your team.</p>
+      <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>Activity across your team. Updates as sellers use the platform.</p>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
-        {[{l:"Team members",v:users.length,c:G.purple},{l:"Active this week",v:activeWeek,c:G.teal},{l:"Sessions this week",v:weekSessions,c:G.teal},{l:"All-time sessions",v:totalSessions,c:G.muted}].map((s,i) => (
+        {[{l:"Team members",v:users.length,c:G.purple},{l:"Active this week",v:`${activeWeek}`,s:users.length?`${Math.round(activeWeek/users.length*100)}%`:"",c:G.teal},{l:"Sessions this week",v:weekSessions,c:G.teal},{l:"Avg/seller this week",v:avgPerSeller,c:G.muted}].map((s,i) => (
           <div key={i} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"18px 16px"}}>
             <div style={{fontSize:11,color:G.muted,marginBottom:6,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</div>
-            <div style={{fontSize:28,fontWeight:600,color:s.c}}>{s.v}</div>
+            <div style={{fontSize:28,fontWeight:600,color:s.c}}>{s.v}{s.s && <span style={{fontSize:12,fontWeight:500,color:G.muted,marginLeft:6}}>{s.s}</span>}</div>
           </div>
         ))}
       </div>
 
+      {/* 14-day activity chart */}
       <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px",marginBottom:24}}>
-        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Module Usage</div>
-        {topModules.length ? topModules.map(([mod, count], i) => {
+        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Activity (Last 14 Days)</div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
+          {dayCounts.map((c,i) => (
+            <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+              <div style={{width:"100%",height:Math.max(2,c/maxDay*50),background:c>0?G.teal:G.borderLight,borderRadius:3,transition:"height 0.3s"}}/>
+              <div style={{fontSize:8,color:G.dim}}>{dayBuckets[i].slice(8,10)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Team members */}
+      <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px",marginBottom:24}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Team Members</div>
+        {users.length ? users.sort((a,b) => new Date(b[1].lastActive) - new Date(a[1].lastActive)).map(([name, u], i) => {
+          const wc = u.sessions.filter(s => new Date(s.date) > weekAgo).length;
+          const mc = {}; u.sessions.forEach(s => { mc[s.module] = (mc[s.module]||0)+1; });
+          const topMod = Object.entries(mc).sort((a,b)=>b[1]-a[1])[0];
+          const ml = topMod ? MODULES.find(x => x.id === topMod[0]) : null;
+          const isMe = name === userName;
+          const da = Math.floor((now - new Date(u.lastActive)) / 864e5);
+          const rc = da === 0 ? "Today" : da === 1 ? "Yesterday" : `${da}d ago`;
+          const statusColor = da <= 7 ? G.teal : da <= 14 ? G.gold : "#ef4444";
+          return (
+            <div key={i} onClick={() => onSelectUser(name)} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:i<users.length-1?`1px solid ${G.borderLight}`:"none",cursor:"pointer"}}
+              onMouseEnter={e => e.currentTarget.style.background=G.bg} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+              <div style={{position:"relative"}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:isMe?G.tealLight:G.purpleLight,border:`1.5px solid ${isMe?G.tealBorder:G.purpleBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:isMe?G.teal:G.purple}}>
+                  {name.split(" ").map(w=>w[0]).join("").slice(0,2)}
+                </div>
+                <div style={{position:"absolute",bottom:-1,right:-1,width:8,height:8,borderRadius:"50%",background:statusColor,border:"2px solid white"}}/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:500}}>{name}{isMe && <span style={{fontSize:10,color:G.teal,marginLeft:6}}>you</span>}</div>
+                <div style={{fontSize:11,color:G.muted,display:"flex",gap:8}}>
+                  {ml && <span style={{color:ml.color}}>Top: {ml.label}</span>}
+                  <span>{u.sessions.length} total</span>
+                </div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:13,fontWeight:600,color:wc>0?G.teal:G.dim}}>{wc}/wk</div>
+                <div style={{fontSize:10,color:G.dim}}>{rc}</div>
+              </div>
+            </div>
+          );
+        }) : <div style={{fontSize:13,color:G.dim}}>No team members yet.</div>}
+      </div>
+
+      {/* Insights */}
+      {insights.length > 0 && (
+        <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"18px 24px"}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:12}}>Quick Insights</div>
+          {insights.slice(0,4).map((ins,i) => (
+            <div key={i} style={{fontSize:12,color:G.text,padding:"6px 0",borderBottom:i<insights.length-1?`1px solid ${G.borderLight}`:"none",display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:14}}>{ins.type==="inactive"?"⚠️":ins.type==="pattern"?"📊":"💡"}</span>{ins.text}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Individual Seller View ----
+function SellerDetail({ name, data, onBack }) {
+  const now = new Date();
+  const weekAgo = new Date(now - 7 * 864e5);
+  const weekSessions = data.sessions.filter(s => new Date(s.date) > weekAgo).length;
+  const totalDuration = data.sessions.reduce((s,x) => s + (x.duration||0), 0);
+  const mc = {}; data.sessions.forEach(s => { mc[s.module] = (mc[s.module]||0)+1; });
+  const modEntries = Object.entries(mc).sort((a,b)=>b[1]-a[1]);
+  const maxMC = modEntries.length ? modEntries[0][1] : 1;
+  const topMod = modEntries.length ? MODULES.find(x => x.id === modEntries[0][0]) : null;
+  const cc = {}; data.sessions.forEach(s => { const c = s.category||s.module; cc[c]=(cc[c]||0)+1; });
+  const catEntries = Object.entries(cc).sort((a,b)=>b[1]-a[1]);
+  const totalCat = catEntries.reduce((s,[,v])=>s+v,0) || 1;
+
+  return (
+    <div style={{padding:"32px 40px",maxWidth:860}}>
+      <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:G.teal,fontFamily:"inherit",padding:0,marginBottom:16,display:"flex",alignItems:"center",gap:4}}>← Back to Team</button>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:28}}>
+        <div style={{width:44,height:44,borderRadius:"50%",background:G.purpleLight,border:`2px solid ${G.purpleBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:600,color:G.purple}}>
+          {name.split(" ").map(w=>w[0]).join("").slice(0,2)}
+        </div>
+        <div>
+          <h2 style={{fontSize:20,fontWeight:600,margin:0}}>{name}</h2>
+          <div style={{fontSize:12,color:G.muted}}>Role: {data.role||"seller"} · Last active: {data.lastActive ? new Date(data.lastActive).toLocaleDateString() : "Never"}</div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
+        {[{l:"Total sessions",v:data.sessions.length,c:G.purple},{l:"This week",v:weekSessions,c:G.teal},{l:"Top module",v:topMod?topMod.label:"—",c:topMod?topMod.color:G.dim,small:true},{l:"Total time",v:totalDuration>3600?Math.round(totalDuration/3600)+"h":Math.round(totalDuration/60)+"m",c:G.muted}].map((s,i) => (
+          <div key={i} style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:10,padding:"18px 16px"}}>
+            <div style={{fontSize:11,color:G.muted,marginBottom:6,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</div>
+            <div style={{fontSize:s.small?16:28,fontWeight:600,color:s.c}}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Module breakdown */}
+      <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px",marginBottom:24}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Module Breakdown</div>
+        {modEntries.length ? modEntries.map(([mod, count], i) => {
           const m = MODULES.find(x => x.id === mod);
           return (
             <div key={i} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-              <div style={{width:110,fontSize:12,fontWeight:500}}>{m ? m.label : mod}</div>
+              <div style={{width:120,fontSize:12,fontWeight:500}}>{m ? m.label : mod}</div>
               <div style={{flex:1,height:8,background:G.bg,borderRadius:4,overflow:"hidden"}}>
                 <div style={{width:`${(count/maxMC)*100}%`,height:"100%",background:m?m.color:G.teal,borderRadius:4}}/>
               </div>
@@ -365,31 +506,125 @@ function ManagerDashboard({ teamData, userName }) {
         }) : <div style={{fontSize:13,color:G.dim}}>No activity yet.</div>}
       </div>
 
+      {/* Category breakdown */}
+      <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px",marginBottom:24}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>What They're Working On</div>
+        {catEntries.length ? catEntries.slice(0,8).map(([cat, count], i) => (
+          <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:i<catEntries.length-1?`1px solid ${G.borderLight}`:"none"}}>
+            <span style={{fontSize:12,fontWeight:500,textTransform:"capitalize"}}>{cat.replace(/_/g," ")}</span>
+            <span style={{fontSize:12,fontWeight:600,color:G.teal}}>{Math.round(count/totalCat*100)}%</span>
+          </div>
+        )) : <div style={{fontSize:13,color:G.dim}}>No data.</div>}
+      </div>
+
+      {/* Recent sessions */}
       <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px"}}>
-        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Team Members</div>
-        {users.length ? users.sort((a,b) => new Date(b[1].lastActive) - new Date(a[1].lastActive)).map(([name, u], i) => {
-          const wc = u.sessions.filter(s => new Date(s.date) > weekAgo).length;
-          const lm = u.sessions.length ? u.sessions[u.sessions.length-1].module : "";
-          const ml = MODULES.find(x => x.id === lm);
-          const isMe = name === userName;
-          const da = Math.floor((now - new Date(u.lastActive)) / 864e5);
-          const rc = da === 0 ? "Today" : da === 1 ? "Yesterday" : `${da}d ago`;
+        <div style={{fontSize:13,fontWeight:600,marginBottom:16}}>Recent Sessions</div>
+        {data.sessions.slice(-20).reverse().map((s,i) => {
+          const m = MODULES.find(x => x.id === s.module);
+          const d = s.date ? new Date(s.date) : null;
           return (
-            <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:i<users.length-1?`1px solid ${G.borderLight}`:"none"}}>
-              <div style={{width:32,height:32,borderRadius:"50%",background:isMe?G.tealLight:G.purpleLight,border:`1.5px solid ${isMe?G.tealBorder:G.purpleBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:isMe?G.teal:G.purple}}>
-                {name.split(" ").map(w=>w[0]).join("").slice(0,2)}
-              </div>
+            <div key={i} style={{padding:"10px 0",borderBottom:i<19?`1px solid ${G.borderLight}`:"none",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:4,height:4,borderRadius:"50%",background:m?m.color:G.teal,flexShrink:0}}/>
               <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:500}}>{name}{isMe && <span style={{fontSize:10,color:G.teal,marginLeft:6}}>you</span>}</div>
-                <div style={{fontSize:11,color:G.muted}}>{ml ? `Last: ${ml.label}` : ""}</div>
+                <div style={{fontSize:12,fontWeight:500}}>{m?m.label:s.module}{s.category && s.category !== s.module ? <span style={{fontSize:10,color:G.dim,marginLeft:8,textTransform:"capitalize"}}>{s.category.replace(/_/g," ")}</span> : ""}</div>
+                {s.firstMessage && <div style={{fontSize:11,color:G.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:400}}>{s.firstMessage}</div>}
               </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:13,fontWeight:600,color:wc>0?G.teal:G.dim}}>{wc}/wk</div>
-                <div style={{fontSize:10,color:G.dim}}>{rc}</div>
-              </div>
+              <div style={{fontSize:10,color:G.dim,flexShrink:0}}>{d?d.toLocaleDateString():""}</div>
+              <div style={{fontSize:10,color:G.dim,flexShrink:0}}>{s.messageCount||0} msgs</div>
             </div>
           );
-        }) : <div style={{fontSize:13,color:G.dim}}>No team members yet.</div>}
+        })}
+        {!data.sessions.length && <div style={{fontSize:13,color:G.dim}}>No sessions yet.</div>}
+      </div>
+    </div>
+  );
+}
+
+// ---- Patterns & Topics ----
+function PatternsView({ teamData }) {
+  const now = new Date();
+  const weekAgo = new Date(now - 7 * 864e5);
+  const users = Object.entries(teamData);
+  const allWeekSessions = users.flatMap(([,u]) => u.sessions.filter(s => new Date(s.date) > weekAgo));
+
+  // Top categories
+  const catCounts = {};
+  allWeekSessions.forEach(s => { const c = s.category||s.module; catCounts[c]=(catCounts[c]||0)+1; });
+  const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+
+  // Module usage
+  const modCounts = {};
+  allWeekSessions.forEach(s => { modCounts[s.module]=(modCounts[s.module]||0)+1; });
+  const modEntries = Object.entries(modCounts).sort((a,b)=>b[1]-a[1]);
+  const maxMod = modEntries.length ? modEntries[0][1] : 1;
+
+  // Recent first messages
+  const recentMsgs = users.flatMap(([name,u]) => u.sessions.filter(s => s.firstMessage && new Date(s.date) > weekAgo).map(s => ({name,msg:s.firstMessage,date:s.date,module:s.module})))
+    .sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,10);
+
+  // Time of day
+  const hours = {Morning:0,Midday:0,Afternoon:0,Evening:0};
+  allWeekSessions.forEach(s => {
+    if (!s.date) return;
+    const h = new Date(s.date).getHours();
+    if (h < 12) hours.Morning++; else if (h < 14) hours.Midday++; else if (h < 18) hours.Afternoon++; else hours.Evening++;
+  });
+  const maxH = Math.max(...Object.values(hours), 1);
+
+  return (
+    <div style={{padding:"32px 40px",maxWidth:860}}>
+      <h2 style={{fontSize:22,fontWeight:600,margin:"0 0 4px"}}>Patterns & Topics</h2>
+      <p style={{fontSize:13,color:G.muted,margin:"0 0 28px"}}>What your team is working on this week.</p>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+        <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px"}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:14}}>Top Topics This Week</div>
+          {topCats.length ? topCats.slice(0,8).map(([cat,count],i) => (
+            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<topCats.length-1?`1px solid ${G.borderLight}`:"none"}}>
+              <span style={{fontSize:12,textTransform:"capitalize"}}>{cat.replace(/_/g," ")}</span>
+              <span style={{fontSize:12,fontWeight:600,color:G.teal}}>{count}</span>
+            </div>
+          )) : <div style={{fontSize:13,color:G.dim}}>No data this week.</div>}
+        </div>
+
+        <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px"}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:14}}>Time of Day</div>
+          {Object.entries(hours).map(([label,count],i) => (
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{width:70,fontSize:12}}>{label}</div>
+              <div style={{flex:1,height:8,background:G.bg,borderRadius:4,overflow:"hidden"}}><div style={{width:`${(count/maxH)*100}%`,height:"100%",background:G.teal,borderRadius:4}}/></div>
+              <div style={{width:30,fontSize:11,color:G.muted,textAlign:"right"}}>{count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px",marginBottom:24}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:14}}>Module Usage This Week</div>
+        {modEntries.length ? modEntries.map(([mod,count],i) => {
+          const m = MODULES.find(x => x.id === mod);
+          return (
+            <div key={i} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+              <div style={{width:120,fontSize:12,fontWeight:500}}>{m?m.label:mod}</div>
+              <div style={{flex:1,height:8,background:G.bg,borderRadius:4,overflow:"hidden"}}><div style={{width:`${(count/maxMod)*100}%`,height:"100%",background:m?m.color:G.teal,borderRadius:4}}/></div>
+              <div style={{width:40,fontSize:12,fontWeight:600,color:G.muted,textAlign:"right"}}>{count}</div>
+            </div>
+          );
+        }) : <div style={{fontSize:13,color:G.dim}}>No data.</div>}
+      </div>
+
+      <div style={{background:G.white,border:`1px solid ${G.border}`,borderRadius:12,padding:"22px 24px"}}>
+        <div style={{fontSize:13,fontWeight:600,marginBottom:14}}>What Sellers Are Asking</div>
+        {recentMsgs.length ? recentMsgs.map((r,i) => {
+          const m = MODULES.find(x => x.id === r.module);
+          return (
+            <div key={i} style={{padding:"8px 0",borderBottom:i<recentMsgs.length-1?`1px solid ${G.borderLight}`:"none"}}>
+              <div style={{fontSize:12,color:G.text,lineHeight:1.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>"{r.msg}"</div>
+              <div style={{fontSize:10,color:G.dim,marginTop:2}}>{r.name} · {m?m.label:r.module}</div>
+            </div>
+          );
+        }) : <div style={{fontSize:13,color:G.dim}}>No conversations this week.</div>}
       </div>
     </div>
   );
@@ -479,8 +714,10 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [userRole, setUserRole] = useState(() => { try { return localStorage.getItem("ag-role") || ""; } catch { return ""; } });
   const [mode, setMode] = useState("seller");
   const [mgrView, setMgrView] = useState("team");
+  const [selectedUser, setSelectedUser] = useState(null);
   const [activeModule, setActiveModule] = useState("onboarding");
   const [chatOpen, setChatOpen] = useState(true);
   const [messages, setMessages] = useState([]);
@@ -532,10 +769,9 @@ export default function App() {
     if (screen === "platform") {
       setMessages([]);
       convRef.current = [];
+      sessionStartRef.current = null;
       setSocialExpanded(null);
       setSocialInput("");
-      logTeamActivity(userName, activeModule);
-      setTeamData(loadTeamData());
     }
   }, [activeModule]);
   useEffect(() => {
@@ -548,12 +784,32 @@ export default function App() {
   const handleLogin = () => {
     if (code.toUpperCase().trim() !== INVITATION_CODE) { setErr("Invalid invitation code."); return; }
     if (!email.includes("@")) { setErr("Please enter a valid email."); return; }
+    // If role already stored, go straight to platform
+    const storedRole = localStorage.getItem("ag-role");
+    if (storedRole) {
+      setUserRole(storedRole);
+      setMode(storedRole === "manager" ? "manager" : "seller");
+      setScreen("platform");
+    } else {
+      setScreen("role-select");
+    }
+  };
+
+  const selectRole = (role) => {
+    setUserRole(role);
+    try { localStorage.setItem("ag-role", role); } catch {}
+    setMode(role === "manager" ? "manager" : "seller");
     setScreen("platform");
   };
+
+  const sessionStartRef = useRef(null);
 
   const saveSession = () => {
     if (messages.length < 2) return;
     const fm = messages.find(m => !m.isTammy);
+    const firstMsg = fm ? fm.text : "";
+    const duration = sessionStartRef.current ? Math.round((Date.now() - sessionStartRef.current) / 1000) : 0;
+    const cat = detectCategory(activeModule, firstMsg);
     const s = {
       id: Date.now().toString(),
       module: activeModule,
@@ -566,6 +822,9 @@ export default function App() {
     const updated = [s, ...sessions].slice(0, 30);
     setSessions(updated);
     saveSessions(updated);
+    // Log rich session to team data
+    logTeamActivity(userName, activeModule, userRole, { category: cat, firstMessage: firstMsg.slice(0, 120), messageCount: messages.length, duration });
+    setTeamData(loadTeamData());
   };
 
   const getCtx = () => {
@@ -581,11 +840,16 @@ export default function App() {
     setMessages(p => [...p, { text: msg, isTammy: false }]);
     if (!text) setInput("");
     setLoading(true);
+    if (!sessionStartRef.current) sessionStartRef.current = Date.now();
     convRef.current.push({ role: "user", content: msg });
 
     const kbContent = kbRef.current || "";
+    const roleContext = userRole === "manager"
+      ? "\n\nUSER ROLE: This person is a manager/RDOS who oversees sellers. If they ask about their own selling, coach them normally. If they ask about managing their team, coaching their sellers, or how to help a struggling rep, shift to coaching-the-coach mode. Help them diagnose seller issues and suggest how to address them in one-on-ones."
+      : "\n\nUSER ROLE: This person is a seller.";
     const sys = SYSTEM_PROMPT
       + "\n\nKNOWLEDGE BASE:\n" + kbContent
+      + roleContext
       + "\n\nMODE: " + (MODE_PROMPTS[activeModule] || "")
       + "\n\n" + getCtx()
       + "\n\nToday: " + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -756,6 +1020,39 @@ export default function App() {
     );
   }
 
+  // ---- ROLE SELECTION ----
+  if (screen === "role-select") {
+    return (
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(160deg,#1a1035 0%,${G.purpleDark} 40%,${G.purple} 70%,#1a1035 100%)`,padding:20}}>
+        <div style={{width:"100%",maxWidth:520}}>
+          <div style={{textAlign:"center",marginBottom:32}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:12,marginBottom:16}}>
+              <GillisLogo size={34}/><span style={{fontSize:22,fontWeight:700,color:"white"}}>AskGillis</span>
+            </div>
+            <p style={{color:"rgba(255,255,255,0.7)",fontSize:16,fontWeight:500,margin:"0 0 4px"}}>Welcome, {userName}.</p>
+            <p style={{color:"rgba(255,255,255,0.4)",fontSize:14,margin:0}}>How will you be using AskGillis?</p>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <button onClick={() => selectRole("seller")} style={{padding:"32px 24px",borderRadius:14,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all 0.2s"}}
+              onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.background="rgba(26,187,166,0.08)";}}
+              onMouseLeave={e => {e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="rgba(255,255,255,0.04)";}}>
+              <div style={{fontSize:28,marginBottom:12}}>&#127919;</div>
+              <div style={{fontSize:16,fontWeight:600,color:"white",marginBottom:6}}>I'm a Seller</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>Coaching, drills, and outreach support.</div>
+            </button>
+            <button onClick={() => selectRole("manager")} style={{padding:"32px 24px",borderRadius:14,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",cursor:"pointer",fontFamily:"inherit",textAlign:"center",transition:"all 0.2s"}}
+              onMouseEnter={e => {e.currentTarget.style.borderColor="#8B5CF6";e.currentTarget.style.background="rgba(139,92,246,0.08)";}}
+              onMouseLeave={e => {e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.background="rgba(255,255,255,0.04)";}}>
+              <div style={{fontSize:28,marginBottom:12}}>&#128202;</div>
+              <div style={{fontSize:16,fontWeight:600,color:"white",marginBottom:6}}>I'm a Manager / Leader</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>Team insights, patterns, and coaching tools.</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ---- PLATFORM ----
   const mod = MODULES.find(m => m.id === activeModule) || {id:"help",label:"Help & FAQ",icon:"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01",color:G.muted};
   const sB = "rgba(255,255,255,0.08)";
@@ -767,16 +1064,7 @@ export default function App() {
       <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0}}>
         <div style={{padding:"18px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",alignItems:"center",gap:10}}>
           <GillisLogo size={28}/>
-          <div><div style={{fontSize:15,fontWeight:600,color:"#E5E5E5"}}>AskGillis</div><div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>Sales Platform</div></div>
-        </div>
-
-        {/* Mode toggle */}
-        <div style={{padding:"12px 12px 0"}}>
-          <div style={{display:"flex",borderRadius:8,border:`0.5px solid ${sB}`,overflow:"hidden"}}>
-            {["seller","manager"].map(m => (
-              <button key={m} onClick={() => {setMode(m);if(m==="manager")setMgrView("team");}} style={{flex:1,padding:"7px 0",border:"none",fontSize:10,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit",background:mode===m?"rgba(26,187,166,0.12)":"transparent",color:mode===m?G.teal:sT}}>{m}</button>
-            ))}
-          </div>
+          <div><div style={{fontSize:15,fontWeight:600,color:"#E5E5E5"}}>AskGillis</div><div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div></div>
         </div>
 
         {/* KB indicator */}
@@ -818,13 +1106,20 @@ export default function App() {
               <TammyAvatar size={18}/>{chatOpen ? "Close Tammy" : "Talk to Tammy"}
             </button>
           </div>
-        </> : <div style={{flex:1,padding:"14px 10px"}}>
-          <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Management</div>
-          {[{id:"team",label:"Team Overview"},{id:"kb",label:"Knowledge Base"}].map(n => {
-            const a = mgrView === n.id;
-            return <button key={n.id} onClick={() => setMgrView(n.id)} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
-          })}
-        </div>}
+        </> : <>
+          <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
+            <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Dashboard</div>
+            {[{id:"team",label:"Team Overview"},{id:"patterns",label:"Patterns & Topics"},{id:"kb",label:"Knowledge Base"}].map(n => {
+              const a = mgrView === n.id && !selectedUser;
+              return <button key={n.id} onClick={() => {setMgrView(n.id);setSelectedUser(null);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
+            })}
+          </div>
+          <div style={{padding:"10px 10px"}}>
+            <button onClick={() => setChatOpen(p=>!p)} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:`0.5px solid ${chatOpen?"rgba(26,187,166,0.3)":sB}`,background:chatOpen?"rgba(26,187,166,0.08)":"transparent",color:chatOpen?G.teal:sT,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+              <TammyAvatar size={18}/>{chatOpen ? "Close Tammy" : "Talk to Tammy"}
+            </button>
+          </div>
+        </>}
 
         <div style={{padding:"6px 10px 0"}}>
           <button onClick={() => setActiveModule("help")} style={{width:"100%",padding:"7px 14px",borderRadius:7,border:"none",background:activeModule==="help"?"rgba(255,255,255,0.06)":"transparent",cursor:"pointer",fontFamily:"inherit",color:activeModule==="help"?"rgba(255,255,255,0.7)":sT,fontSize:11.5,fontWeight:400,display:"flex",alignItems:"center",gap:8,textAlign:"left"}}
@@ -834,7 +1129,15 @@ export default function App() {
             Help & FAQ
           </button>
         </div>
-        <div style={{padding:"10px 20px",borderTop:`0.5px solid ${sB}`,marginTop:6}}>
+        <div style={{padding:"4px 10px"}}>
+          <button onClick={() => {setMode(mode==="seller"?"manager":"seller");if(mode==="seller"){setMgrView("team");setSelectedUser(null);}else{setActiveModule("onboarding");}setChatOpen(mode==="seller"?false:true);}}
+            style={{width:"100%",padding:"6px 14px",borderRadius:7,border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",color:"rgba(255,255,255,0.25)",fontSize:10.5,textAlign:"left"}}
+            onMouseEnter={e => e.currentTarget.style.color="rgba(255,255,255,0.5)"}
+            onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.25)"}>
+            {mode === "seller" ? (userRole === "manager" ? "Switch to Manager" : "") : "Switch to Seller Mode"}
+          </button>
+        </div>
+        <div style={{padding:"6px 20px 14px",borderTop:`0.5px solid ${sB}`}}>
           <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{userName}</div>
         </div>
       </div>
@@ -844,7 +1147,7 @@ export default function App() {
         <div style={{padding:"12px 28px",borderBottom:`1px solid ${G.border}`,background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {(mode === "seller" || activeModule === "help") && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
-            <span style={{fontSize:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (mgrView === "kb" ? "Knowledge Base" : "Team Overview") : mod.label}</span>
+            <span style={{fontSize:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (selectedUser ? selectedUser : mgrView === "kb" ? "Knowledge Base" : mgrView === "patterns" ? "Patterns & Topics" : "Team Overview") : mod.label}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
@@ -853,14 +1156,16 @@ export default function App() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Feedback
             </button>
-            {mode === "seller" && !chatOpen && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
+            {!chatOpen && <button onClick={() => setChatOpen(true)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:G.teal,color:"white",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}><TammyAvatar size={16}/>Ask Tammy</button>}
           </div>
         </div>
 
         <div style={{flex:1,overflowY:"auto",padding:mode==="manager"?"0":"28px 36px"}}>
           {/* Manager views */}
-          {mode === "manager" && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName}/>}
-          {mode === "manager" && mgrView === "kb" && <KBAdmin kbWords={kbWords} hasOverride={hasKBOverride} onUpdate={(text) => {kbRef.current=text;setKbWords(text.split(/\s+/).length);setHasKBOverride(true);}} onReset={() => {kbRef.current=KNOWLEDGE_BASE;setKbWords(KNOWLEDGE_BASE.split(/\s+/).length);setHasKBOverride(false);}}/>}
+          {mode === "manager" && !selectedUser && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName} onSelectUser={name => setSelectedUser(name)}/>}
+          {mode === "manager" && selectedUser && teamData[selectedUser] && <SellerDetail name={selectedUser} data={teamData[selectedUser]} onBack={() => setSelectedUser(null)}/>}
+          {mode === "manager" && !selectedUser && mgrView === "patterns" && <PatternsView teamData={teamData}/>}
+          {mode === "manager" && !selectedUser && mgrView === "kb" && <KBAdmin kbWords={kbWords} hasOverride={hasKBOverride} onUpdate={(text) => {kbRef.current=text;setKbWords(text.split(/\s+/).length);setHasKBOverride(true);}} onReset={() => {kbRef.current=KNOWLEDGE_BASE;setKbWords(KNOWLEDGE_BASE.split(/\s+/).length);setHasKBOverride(false);}}/>}
 
           {/* Onboarding */}
           {mode === "seller" && activeModule === "onboarding" && (
@@ -1195,13 +1500,13 @@ export default function App() {
       </div>
 
       {/* TAMMY CHAT PANEL */}
-      {mode === "seller" && chatOpen && (
+      {chatOpen && (
         <div style={{width:340,borderLeft:`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column",flexShrink:0}}>
           <div style={{padding:"12px 16px",borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <TammyAvatar size={30}/>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:600}}>Tammy</div>
-              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mod.color}}>Coaching: {mod.label}</div>
+              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mode==="manager"?"#8B5CF6":mod.color}}>{mode==="manager"?"Coaching the Coach":("Coaching: "+mod.label)}</div>
             </div>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
               onMouseEnter={e => e.currentTarget.style.color=G.teal}
@@ -1218,7 +1523,8 @@ export default function App() {
                 <div style={{fontSize:13,fontWeight:600,marginTop:10,marginBottom:4}}>I'm right here</div>
                 <div style={{fontSize:12,color:G.muted,lineHeight:1.6,marginBottom:14}}>I can see what you're working on. Ask me anything.</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                  {(activeModule==="onboarding"?["What should I focus on first?","Explain the Gillis approach","What does a typical day look like?"]
+                  {(mode==="manager"?["One of my sellers is struggling with objections","How do I coach a rep who's not hitting numbers?","What should I look for in my one-on-ones this week?"]
+                    :activeModule==="onboarding"?["What should I focus on first?","Explain the Gillis approach","What does a typical day look like?"]
                     :activeModule==="gameplan"?["Plan my week","Which accounts should I focus on?","What worked last week?"]
                     :activeModule==="outreach"?["Help me write an opening statement","What qualifying questions should I ask?","Draft an outreach email"]
                     :activeModule==="situation"?["I keep hitting the same objection","My pipeline is drying up","I had a rough call"]
