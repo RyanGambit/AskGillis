@@ -20,6 +20,7 @@ const G = {
 
 const MODULES = [
   {id:"onboarding",label:"Onboarding",icon:"M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",color:G.teal},
+  {id:"gameplan",label:"Weekly Game Plan",icon:"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M12 12h.01M8 12h.01M16 12h.01M12 16h.01M8 16h.01M16 16h.01",color:"#8B5CF6"},
   {id:"outreach",label:"Outreach Support",icon:"M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z",color:G.teal},
   {id:"situation",label:"Situation",icon:"M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01",color:G.lilac},
   {id:"roleplay",label:"Role Play",icon:"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",color:G.orange},
@@ -149,8 +150,43 @@ const SOCIAL_ITEMS = [
   },
 ];
 
+const GAMEPLAN_STARTERS = [
+  {
+    category:"Start Your Week",
+    items:[
+      {label:"Plan my week",desc:"Sit down with Tammy and figure out where your energy goes across your properties.",prompt:"I want to plan my week. Help me figure out where to focus.",input:true,inputLabel:"What properties or accounts are on your plate right now?",inputPlaceholder:"e.g. 3 hotels in the Denver market, one new onboard, two established"},
+      {label:"I have too much going on",desc:"Feeling scattered across too many properties or leads. Get clarity.",prompt:"I'm managing a lot right now and I feel scattered. Help me figure out what actually matters this week."},
+    ]
+  },
+  {
+    category:"Prioritize Accounts",
+    items:[
+      {label:"Which accounts should I focus on?",desc:"You have a pipeline. Tammy helps you figure out where effort turns into meetings.",prompt:"I have a handful of accounts I'm working. Help me think about which ones deserve my energy this week and which ones can wait.",input:true,inputLabel:"List a few accounts and where they stand",inputPlaceholder:"e.g. Johnson Controls (cold, no response), ABC Manufacturing (had a good call), City Sports League (sent proposal)"},
+      {label:"New hotel onboarding this week",desc:"Just picked up a property. Figure out where to start.",prompt:"I just got assigned a new hotel property. Help me plan my first week of prospecting for it.",input:true,inputLabel:"What do you know about the property?",inputPlaceholder:"e.g. 120-room Courtyard in a suburban market, near an industrial park"},
+      {label:"One property is eating all my time",desc:"Unbalanced portfolio. One hotel is demanding everything.",prompt:"One of my properties is taking up all my time and my other hotels are suffering. How do I rebalance?"},
+    ]
+  },
+  {
+    category:"Follow-Up Planning",
+    items:[
+      {label:"Who do I follow up with this week?",desc:"Review your pending outreach and decide what's worth another touch.",prompt:"I have a bunch of prospects I need to follow up with. Help me think about who to prioritize and what to say differently this time.",input:true,inputLabel:"Who's pending?",inputPlaceholder:"e.g. Left 3 voicemails for a travel manager, emailed a construction company twice, waiting on a proposal response"},
+      {label:"Decide what to drop",desc:"Not every lead is worth chasing forever. Know when to move on.",prompt:"I have some accounts I've been chasing for a while with no traction. Help me decide which ones to keep working and which ones to let go."},
+      {label:"Plan my outreach sequence for the week",desc:"Map out who gets called, emailed, or messaged and in what order.",prompt:"Help me build an outreach plan for this week. I want to know who I'm contacting each day and through what channel.",input:true,inputLabel:"How many prospects are you actively working?",inputPlaceholder:"e.g. About 12 active prospects across 3 properties"},
+    ]
+  },
+  {
+    category:"Reflect & Adjust",
+    items:[
+      {label:"What worked last week?",desc:"Before planning forward, look back. What landed and what didn't.",prompt:"Let's look at last week. Help me think about what worked, what didn't, and what I should do differently this week."},
+      {label:"I'm not hitting my numbers",desc:"Activity is up but results aren't following. Diagnose the gap.",prompt:"I'm doing the work but my numbers aren't where they need to be. Help me figure out if it's a volume problem, a targeting problem, or a quality problem."},
+      {label:"Set my goals for the week",desc:"Get specific about what you want to accomplish, not just activity counts.",prompt:"Help me set real goals for this week. Not just 'make 50 calls' but actual outcomes I'm working toward."},
+    ]
+  },
+];
+
 const MODE_PROMPTS = {
   onboarding:"They're new and probably overwhelmed. Give ONE thing to focus on in 2-3 sentences. Ask one question. Do NOT give a roadmap or overview of the whole program. Do NOT front-load context.",
+  gameplan:"This is the weekly planning module. Help them prioritize their week across their properties. Ask what's on their plate, then help them decide where to focus energy. Be direct about what matters most and what can wait. Don't build a full plan unprompted. Start with one question, build from their answers. Keep it tight.",
   outreach:"Help with outreach using call planner. Reference their target details if entered. Be specific and actionable.",
   situation:"They have a situation. Validate in one sentence first, then coach. Be direct about what went wrong.",
   roleplay:"Set the scene, then become the prospect. Be realistic, slightly guarded, throw objections. Give brief specific feedback after.",
@@ -738,6 +774,56 @@ export default function App() {
             </div>
           )}
 
+          {/* Weekly Game Plan */}
+          {mode === "seller" && activeModule === "gameplan" && (
+            <div>
+              <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Weekly Game Plan</h2>
+              <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 28px",maxWidth:540}}>Monday morning starts here. Figure out where your energy goes, which accounts deserve your attention, and what you're actually trying to accomplish this week.</p>
+              {GAMEPLAN_STARTERS.map((cat, ci) => (
+                <div key={ci} style={{marginTop:ci > 0 ? 28 : 0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>{cat.category}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {cat.items.map((s, si) => {
+                      const key = "gp-" + ci + "-" + si;
+                      const isExpanded = socialExpanded === key;
+                      return (
+                        <div key={si} style={{borderRadius:10,border:`1px solid ${isExpanded ? "#8B5CF6" : G.border}`,background:isExpanded ? "#F5F3FF" : G.white,transition:"all 0.15s",overflow:"hidden"}}>
+                          <div onClick={() => {
+                            if (s.input) { setSocialExpanded(isExpanded ? null : key); setSocialInput(""); }
+                            else { setChatOpen(true); sendMessage(s.prompt); }
+                          }}
+                            style={{padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}
+                            onMouseEnter={e => { if (!isExpanded) { e.currentTarget.parentElement.style.borderColor = "#8B5CF6"; e.currentTarget.parentElement.style.background = "#F5F3FF"; }}}
+                            onMouseLeave={e => { if (!isExpanded) { e.currentTarget.parentElement.style.borderColor = G.border; e.currentTarget.parentElement.style.background = G.white; }}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                              <div style={{fontSize:13,fontWeight:600,color:G.dark,marginBottom:3}}>{s.label}</div>
+                              {s.input && <div style={{fontSize:10,fontWeight:600,color:"#8B5CF6",background:"#EDE9FE",padding:"2px 8px",borderRadius:12,flexShrink:0,marginLeft:12}}>{isExpanded ? "Close" : "Add context"}</div>}
+                            </div>
+                            <div style={{fontSize:12,color:G.muted,lineHeight:1.5}}>{s.desc}</div>
+                          </div>
+                          {isExpanded && s.input && (
+                            <div style={{padding:"0 18px 16px 18px"}}>
+                              <label style={{display:"block",fontSize:11,fontWeight:600,color:G.muted,marginBottom:6,letterSpacing:"0.04em"}}>{s.inputLabel}</label>
+                              <textarea value={socialInput} onChange={e => setSocialInput(e.target.value)} placeholder={s.inputPlaceholder} rows={2}
+                                style={{width:"100%",boxSizing:"border-box",resize:"none",border:`1px solid ${G.border}`,borderRadius:8,padding:"10px 12px",fontSize:13,fontFamily:"inherit",color:G.dark,lineHeight:1.5,outline:"none",background:G.white}}
+                                onFocus={e => e.currentTarget.style.borderColor = "#8B5CF6"}
+                                onBlur={e => e.currentTarget.style.borderColor = G.border}
+                                autoFocus/>
+                              <button onClick={() => {
+                                const msg = socialInput.trim() ? s.prompt + "\n\nContext: " + socialInput.trim() : s.prompt;
+                                setChatOpen(true); sendMessage(msg); setSocialExpanded(null); setSocialInput("");
+                              }} style={{marginTop:10,padding:"8px 18px",borderRadius:8,border:"none",background:"#8B5CF6",color:"white",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Ask Tammy</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Outreach */}
           {mode === "seller" && activeModule === "outreach" && (
             <div>
@@ -908,6 +994,7 @@ export default function App() {
                 <div style={{fontSize:12,color:G.muted,lineHeight:1.6,marginBottom:14}}>I can see what you're working on. Ask me anything.</div>
                 <div style={{display:"flex",flexDirection:"column",gap:5}}>
                   {(activeModule==="onboarding"?["What should I focus on first?","Explain the Gillis approach","What does a typical day look like?"]
+                    :activeModule==="gameplan"?["Plan my week","Which accounts should I focus on?","What worked last week?"]
                     :activeModule==="outreach"?["Help me write an opening statement","What qualifying questions should I ask?","Draft an outreach email"]
                     :activeModule==="situation"?["I keep hitting the same objection","My pipeline is drying up","I had a rough call"]
                     :activeModule==="roleplay"?["Let's practice a cold call","Throw me a tough objection","Practice a follow-up"]
