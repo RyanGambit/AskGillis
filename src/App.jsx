@@ -1110,8 +1110,8 @@ export default function App() {
           <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Dashboard</div>
             {[{id:"team",label:"Team Overview"},{id:"patterns",label:"Patterns & Topics"},{id:"kb",label:"Knowledge Base"}].map(n => {
-              const a = mgrView === n.id && !selectedUser;
-              return <button key={n.id} onClick={() => {setMgrView(n.id);setSelectedUser(null);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
+              const a = mgrView === n.id && !selectedUser && activeModule !== "help";
+              return <button key={n.id} onClick={() => {setMgrView(n.id);setSelectedUser(null);setActiveModule("__mgr");}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2}}>{n.label}</button>;
             })}
           </div>
           <div style={{padding:"10px 10px"}}>
@@ -1160,12 +1160,12 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{flex:1,overflowY:"auto",padding:mode==="manager"?"0":"28px 36px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:(mode==="manager" && activeModule!=="help")?"0":"28px 36px"}}>
           {/* Manager views */}
-          {mode === "manager" && !selectedUser && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName} onSelectUser={name => setSelectedUser(name)}/>}
-          {mode === "manager" && selectedUser && teamData[selectedUser] && <SellerDetail name={selectedUser} data={teamData[selectedUser]} onBack={() => setSelectedUser(null)}/>}
-          {mode === "manager" && !selectedUser && mgrView === "patterns" && <PatternsView teamData={teamData}/>}
-          {mode === "manager" && !selectedUser && mgrView === "kb" && <KBAdmin kbWords={kbWords} hasOverride={hasKBOverride} onUpdate={(text) => {kbRef.current=text;setKbWords(text.split(/\s+/).length);setHasKBOverride(true);}} onReset={() => {kbRef.current=KNOWLEDGE_BASE;setKbWords(KNOWLEDGE_BASE.split(/\s+/).length);setHasKBOverride(false);}}/>}
+          {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "team" && <ManagerDashboard teamData={teamData} userName={userName} onSelectUser={name => setSelectedUser(name)}/>}
+          {mode === "manager" && activeModule !== "help" && selectedUser && teamData[selectedUser] && <SellerDetail name={selectedUser} data={teamData[selectedUser]} onBack={() => setSelectedUser(null)}/>}
+          {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "patterns" && <PatternsView teamData={teamData}/>}
+          {mode === "manager" && activeModule !== "help" && !selectedUser && mgrView === "kb" && <KBAdmin kbWords={kbWords} hasOverride={hasKBOverride} onUpdate={(text) => {kbRef.current=text;setKbWords(text.split(/\s+/).length);setHasKBOverride(true);}} onReset={() => {kbRef.current=KNOWLEDGE_BASE;setKbWords(KNOWLEDGE_BASE.split(/\s+/).length);setHasKBOverride(false);}}/>}
 
           {/* Onboarding */}
           {mode === "seller" && activeModule === "onboarding" && (
