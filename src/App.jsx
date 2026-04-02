@@ -46,6 +46,49 @@ const ONBOARDING_ITEMS = [
   {id:"ob16",label:"Final Salesforce review",tammy:false,note:"RDOS",week:"Week 3"},
 ];
 
+const SITUATION_CATEGORIES = [
+  {
+    category: "Objections & Pushback",
+    items: [
+      {label:"\"Send me your info\"",desc:"They brushed you off with the most common deflection.",prompt:"A prospect just hit me with 'send me your info' to get me off the phone. How do I handle this?"},
+      {label:"\"We're happy with our current hotel\"",desc:"Loyalty objection. They won't even hear you out.",prompt:"I called a prospect and they said they're happy with their current hotel and don't need to look at alternatives. What do I do?"},
+      {label:"\"Your rate is too high\"",desc:"Price objection before you've built any value.",prompt:"A prospect says our rate is too high before I've even had a chance to show them what we offer. How should I respond?"},
+      {label:"\"Call me back next quarter\"",desc:"Stall tactic. They're trying to get rid of you.",prompt:"A prospect keeps telling me to call back next quarter. I've heard it twice now. How do I break through this?"},
+    ]
+  },
+  {
+    category: "Stalled Accounts",
+    items: [
+      {label:"Prospect went cold",desc:"They were engaged, now they're ghosting you.",prompt:"I had a prospect who was responding and seemed interested, but now they've gone completely cold. No replies to emails or calls."},
+      {label:"Multiple voicemails, no callback",desc:"The grind of unanswered outreach.",prompt:"I've left at least 10 voicemails for this prospect over the past few weeks and gotten nothing back. Should I keep going or change my approach?"},
+      {label:"Lost the deal and don't know why",desc:"It slipped away and you need to understand what happened.",prompt:"I just found out we lost a piece of business I thought we had. I don't really know what went wrong."},
+    ]
+  },
+  {
+    category: "Calls & Conversations",
+    items: [
+      {label:"Call didn't land",desc:"You got through but it didn't go the way you wanted.",prompt:"I just got off a call that didn't go well. I had the prospect on the phone but I don't think I made any progress."},
+      {label:"Went transactional instead of consultative",desc:"You pitched features instead of having a business conversation.",prompt:"I just realized I spent the whole call talking about our hotel's amenities instead of understanding their business. How do I fix this next time?"},
+      {label:"Didn't know what questions to ask",desc:"You had the meeting but missed the depth.",prompt:"I had a meeting with a prospect but I ran out of things to ask after a few minutes. I know I didn't dig deep enough."},
+    ]
+  },
+  {
+    category: "Confidence & Motivation",
+    items: [
+      {label:"Don't know where to focus today",desc:"Too many hotels, too many leads, feeling scattered.",prompt:"I'm managing multiple properties and I honestly don't know where to put my energy today. Everything feels equally urgent."},
+      {label:"Pressure from leadership",desc:"Numbers aren't where they need to be.",prompt:"My GM is putting pressure on me about my numbers this month. I'm doing the activity but the results aren't showing yet."},
+      {label:"Having a tough week",desc:"Sometimes you just need to reset.",prompt:"It's been a rough week. A lot of rejection, not a lot of wins. I just need some help getting my head back in the game."},
+    ]
+  },
+  {
+    category: "Client & Account Issues",
+    items: [
+      {label:"Client relationship is strained",desc:"Something's off with a hotel you manage.",prompt:"I'm having some tension with one of my hotel clients. The GM seems frustrated with our results and I'm not sure how to address it."},
+      {label:"Hotel isn't giving me what I need",desc:"Property issues making your job harder.",prompt:"One of my hotels has some real issues that make it hard to sell. The product isn't where it needs to be and prospects keep bringing it up."},
+    ]
+  },
+];
+
 const METHODOLOGY_ITEMS = [
   {title:"Business vs Sales Conversations",desc:"Shift from pitching features to understanding what the customer is buying.",color:G.teal},
   {title:"Call Planner",desc:"4-step framework: synthesize research, set objectives, opening statement, qualifying questions.",color:G.teal},
@@ -670,17 +713,23 @@ export default function App() {
           {mode === "seller" && activeModule === "situation" && (
             <div>
               <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>What's going on?</h2>
-              <p style={{fontSize:13,color:G.muted,margin:"0 0 24px"}}>Pick what fits or start typing.</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                {[{l:"Objection I can't get past",p:"I hit an objection I couldn't handle."},{l:"Prospect went cold",p:"A prospect has gone cold on me."},{l:"Call didn't go well",p:"I just had a call that didn't land."},{l:"Don't know where to start",p:"I'm stuck and don't know where to focus."},{l:"Client relationship issue",p:"Having a challenge with a hotel client."},{l:"Pressure from leadership",p:"Getting pressure about my numbers."}].map((s,i) => (
-                  <button key={i} onClick={() => {setChatOpen(true);sendMessage(s.p);}}
-                    style={{padding:"18px 16px",borderRadius:10,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s"}}
-                    onMouseEnter={e => {e.currentTarget.style.borderColor=G.lilac;e.currentTarget.style.background=G.lilacLight;}}
-                    onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.background=G.white;}}>
-                    <div style={{fontSize:13,fontWeight:600,color:G.dark}}>{s.l}</div>
-                  </button>
-                ))}
-              </div>
+              <p style={{fontSize:13,color:G.text,lineHeight:1.7,margin:"0 0 28px",maxWidth:540}}>Sales is a grind. Some days the calls don't land, the pipeline stalls, or the pressure builds. Pick what's closest to your situation and Tammy will coach you through it.</p>
+              {SITUATION_CATEGORIES.map((cat, ci) => (
+                <div key={ci} style={{marginTop:ci > 0 ? 28 : 0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:G.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>{cat.category}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {cat.items.map((s, si) => (
+                      <button key={si} onClick={() => {setChatOpen(true);sendMessage(s.prompt);}}
+                        style={{padding:"16px 18px",borderRadius:10,border:`1px solid ${G.border}`,background:G.white,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all 0.15s",width:"100%"}}
+                        onMouseEnter={e => {e.currentTarget.style.borderColor=G.lilac;e.currentTarget.style.background=G.lilacLight;}}
+                        onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.background=G.white;}}>
+                        <div style={{fontSize:13,fontWeight:600,color:G.dark,marginBottom:3}}>{s.label}</div>
+                        <div style={{fontSize:12,color:G.muted,lineHeight:1.5}}>{s.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
