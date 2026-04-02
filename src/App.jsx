@@ -1520,7 +1520,7 @@ export default function App() {
 
       {/* TAMMY CHAT PANEL */}
       {chatOpen && (
-        <div style={{width:340,borderLeft:`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{width:420,borderLeft:`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column",flexShrink:0}}>
           <div style={{padding:"12px 16px",borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <TammyAvatar size={30}/>
             <div style={{flex:1}}>
