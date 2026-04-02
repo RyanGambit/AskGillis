@@ -607,28 +607,27 @@ export default function App() {
         return;
       }
 
-      // Streaming with smooth typewriter effect
+      // Streaming with fixed-interval typewriter
       setMessages(p => [...p, { text: "", isTammy: true }]);
       setLoading(false);
       let fullText = "";
-      let displayedText = "";
-      let typeTimer = null;
+      let displayed = 0;
+      let streamDone = false;
 
-      const updateDisplay = (final) => {
-        if (typeTimer) cancelAnimationFrame(typeTimer);
-        const tick = () => {
-          if (displayedText.length < fullText.length) {
-            // Release a few characters per frame for smooth typing feel
-            const charsPerTick = Math.max(1, Math.ceil((fullText.length - displayedText.length) / 8));
-            displayedText = fullText.slice(0, displayedText.length + charsPerTick);
-            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: displayedText, isTammy: true }; return u; });
-            typeTimer = requestAnimationFrame(tick);
-          } else if (final) {
-            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
+      // Fixed 12ms interval releases characters at a steady, even pace
+      const ticker = setInterval(() => {
+        if (displayed >= fullText.length) {
+          if (streamDone) {
+            clearInterval(ticker);
+            convRef.current.push({ role: "assistant", content: fullText || "Empty response." });
           }
-        };
-        typeTimer = requestAnimationFrame(tick);
-      };
+          return;
+        }
+        // Release word-sized chunks for natural reading rhythm
+        const next = fullText.indexOf(" ", displayed + 1);
+        displayed = next === -1 ? fullText.length : Math.min(next + 1, fullText.length);
+        setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText.slice(0, displayed), isTammy: true }; return u; });
+      }, 12);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -646,7 +645,6 @@ export default function App() {
             const evt = JSON.parse(payload);
             if (evt.type === "content_block_delta" && evt.delta?.text) {
               fullText += evt.delta.text;
-              updateDisplay(false);
             }
           } catch {}
         }
@@ -658,23 +656,14 @@ export default function App() {
         processLines(decoder.decode(value, { stream: true }));
       }
       if (buffer.trim()) processLines("\n");
+      streamDone = true;
 
-      if (!fullText) fullText = "Empty response.";
-      // Flush remaining characters smoothly then finalize
+      // Wait for the ticker to finish displaying
       await new Promise(resolve => {
-        const flush = () => {
-          if (displayedText.length < fullText.length) {
-            const charsPerTick = Math.max(1, Math.ceil((fullText.length - displayedText.length) / 4));
-            displayedText = fullText.slice(0, displayedText.length + charsPerTick);
-            setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: displayedText, isTammy: true }; return u; });
-            requestAnimationFrame(flush);
-          } else { resolve(); }
-        };
-        if (typeTimer) cancelAnimationFrame(typeTimer);
-        requestAnimationFrame(flush);
+        const check = setInterval(() => {
+          if (displayed >= fullText.length) { clearInterval(check); resolve(); }
+        }, 20);
       });
-      convRef.current.push({ role: "assistant", content: fullText });
-      setMessages(p => { const u = p.slice(); u[u.length - 1] = { text: fullText, isTammy: true }; return u; });
     } catch (e) {
       setMessages(p => [...p, { text: e.message, isTammy: true }]);
       setLoading(false);
