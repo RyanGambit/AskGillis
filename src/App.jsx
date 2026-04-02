@@ -1549,7 +1549,7 @@ export default function App() {
                     {cat.items.map((item, si) => {
                       const borderColor = item.type === "link" ? "#3B82F6" : item.type === "document" ? G.teal : G.lilac;
                       const isPlaceholder = item.placeholder;
-                      const isDocHosted = item.type === "document" && false; // flip to true when files added to public/docs/
+                      const isDocHosted = item.type === "document";
                       return (
                         <div key={si}
                           onClick={() => {
