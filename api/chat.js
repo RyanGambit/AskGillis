@@ -1,22 +1,31 @@
-export default async function handler(req, res) {
+export const config = { runtime: "edge" };
+
+export default async function handler(req) {
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(200).end();
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: { message: "ANTHROPIC_API_KEY not configured" } });
+    return new Response(JSON.stringify({ error: { message: "ANTHROPIC_API_KEY not configured" } }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
-    const { model, max_tokens, system, messages } = req.body;
+    const { model, max_tokens, system, messages } = await req.json();
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -30,27 +39,23 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errText = await response.text();
-      res.setHeader("Content-Type", "application/json");
-      return res.status(response.status).send(errText);
+      return new Response(errText, {
+        status: response.status,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Stream SSE back to the client
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      res.write(chunk);
-    }
-
-    return res.end();
+    // Pipe the SSE stream straight through to the client
+    return new Response(response.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+      },
+    });
   } catch (err) {
-    return res.status(500).json({ error: { message: err.message } });
+    return new Response(JSON.stringify({ error: { message: err.message } }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
