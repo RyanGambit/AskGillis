@@ -5,6 +5,24 @@ import { OPERATIONAL_KB } from "./operational-kb.js";
 
 const INVITATION_CODE = "GILLIS2026";
 
+const LOGIN_QUOTES = [
+  {text:"It takes 18 dials to reach one buyer. The ones who win are the ones who make dial 19.",attr:"Room to Grow"},
+  {text:"Strategy is the what. Tactics are the how. Most sellers skip straight to tactics and wonder why nothing sticks.",attr:"Gillis Methodology"},
+  {text:"The best response to any objection is a question. Acknowledge, Ask, Answer, Accept.",attr:"The 4A Model"},
+  {text:"Your opening statement has 30 seconds. Don't sell in it. Earn the right to keep talking.",attr:"Call Planner"},
+  {text:"Stop pitching your hotel. Start understanding their business. That's the shift from sales to strategy.",attr:"Business vs Sales Conversations"},
+  {text:"A prospect who says 'send me your info' isn't interested yet. They're giving you a chance to earn their attention differently.",attr:"Objection Handling"},
+  {text:"90% of sellers quit after 3-4 touches. It takes 12 to close. The math is simple. The discipline isn't.",attr:"The Sales Reality"},
+  {text:"You don't need more leads. You need better conversations with the leads you have.",attr:"Gillis Methodology"},
+  {text:"Every hotel has rooms and meeting space. That's not your differentiator. Your knowledge of their business is.",attr:"Room to Grow"},
+  {text:"The parking lot is a goldmine. License plates, company logos, contractor trucks. Your next client is already staying at your hotel.",attr:"Prospecting"},
+  {text:"Don't ask 'do you have any travel needs?' Ask 'what's driving the expansion into this market?' One gets a no. The other gets a conversation.",attr:"Qualifying Questions"},
+  {text:"A follow-up email that says 'just checking in' tells the prospect you have nothing new to offer. Lead with value every time.",attr:"Follow-Up Strategy"},
+  {text:"Culture is your differentiator. Front desk, night audit, housekeeping. Everybody sells.",attr:"Everybody Sells"},
+  {text:"Do your SWOT by segment, not by hotel. Vanilla is not a sales strategy.",attr:"SWOT Analysis"},
+  {text:"The seller who prepares wins. Research the company, know the contact, plan your questions. Then pick up the phone.",attr:"Call Planner"},
+];
+
 // ---- Feedback: paste your Google Apps Script web app URL here ----
 const FEEDBACK_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFSCGAPoKO8xw9LFnuW-6nFdP1e65kCB2Bm0MUJjkxbj_Uj_CGLsq16bsJx1tSt6jL/exec";
 
@@ -854,6 +872,7 @@ export default function App() {
   const [faqOpen, setFaqOpen] = useState(null);
   const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const [loginPhase, setLoginPhase] = useState(0); // 0=splash, 1=transition, 2=login
+  const [loginQuote] = useState(() => LOGIN_QUOTES[Math.floor(Math.random()*LOGIN_QUOTES.length)]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = winW < 768;
   const isTablet = winW >= 768 && winW < 1024;
@@ -1245,7 +1264,11 @@ export default function App() {
               </div>
             </div>
             <div className={loginPhase>=2?"login-anim login-d6":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
-              <p style={{marginTop:20,fontSize:12,color:"rgba(255,255,255,0.35)",fontWeight:500}}>Need access? Contact your Gillis representative.</p>
+              <div style={{marginTop:28,padding:"0 8px",textAlign:"center"}}>
+                <div style={{fontSize:13,fontStyle:"italic",color:"rgba(255,255,255,0.55)",lineHeight:1.7,marginBottom:8}}>"{loginQuote.text}"</div>
+                <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>— {loginQuote.attr}</div>
+              </div>
+              <p style={{marginTop:16,fontSize:11,color:"rgba(255,255,255,0.25)",fontWeight:500}}>Need access? Contact your Gillis representative.</p>
             </div>
           </div>
         </div>
