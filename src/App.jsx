@@ -1256,8 +1256,8 @@ export default function App() {
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(160deg,#1a1035 0%,${G.purpleDark} 40%,${G.purple} 70%,#1a1035 100%)`,padding:20}}>
         <div style={{width:"100%",maxWidth:520}}>
           <div style={{textAlign:"center",marginBottom:32}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:12,marginBottom:16}}>
-              <GillisLogo size={34}/><span style={{fontSize:22,fontWeight:700,color:"white"}}>AskGillis</span>
+            <div style={{marginBottom:16}}>
+              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:40}}/>
             </div>
             <p style={{color:"rgba(255,255,255,0.7)",fontSize:16,fontWeight:500,margin:"0 0 4px"}}>Welcome, {userName}.</p>
             <p style={{color:"rgba(255,255,255,0.4)",fontSize:14,margin:0}}>How will you be using AskGillis?</p>
@@ -1294,9 +1294,9 @@ export default function App() {
       {isCompact && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:90}}/>}
       {/* SIDEBAR */}
       <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
-        <div style={{padding:"18px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",alignItems:"center",gap:10}}>
-          <GillisLogo size={28}/>
-          <div><div style={{fontSize:15,fontWeight:600,color:"#E5E5E5"}}>AskGillis</div><div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div></div>
+        <div style={{padding:"16px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",flexDirection:"column",gap:6}}>
+          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:24,alignSelf:"flex-start",opacity:0.9}}/>
+          <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div>
         </div>
 
         {/* KB indicator (hidden, functionality preserved) */}
