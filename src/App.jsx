@@ -806,7 +806,7 @@ export default function App() {
     } catch {}
     return new Date().getDay() === 1 ? "gameplan" : "onboarding";
   });
-  const [chatOpen, setChatOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -955,6 +955,7 @@ export default function App() {
     setUserRole(role);
     try { localStorage.setItem("ag-role-" + email.trim().toLowerCase(), role); } catch {}
     setMode(role === "manager" ? "manager" : "seller");
+    setChatOpen(window.innerWidth >= 1024);
     setScreen("platform");
   };
 
