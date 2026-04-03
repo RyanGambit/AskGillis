@@ -1213,10 +1213,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Top-left logo */}
-        <div style={{position:"absolute",top:32,left:32,zIndex:6,opacity:loginPhase>=2?1:0,transition:"opacity 0.6s ease 1s"}}>
-          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{width:120,opacity:0.5}}/>
-        </div>
+        {/* Top-left logo removed — logo already appears above login card */}
 
         {/* Login form */}
         <div style={{position:"absolute",inset:0,zIndex:5,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 28px",opacity:loginPhase>=2?1:0,pointerEvents:loginPhase>=2?"auto":"none",transition:"opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s"}}>
