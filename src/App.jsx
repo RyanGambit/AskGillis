@@ -171,7 +171,9 @@ const HUB_CATEGORIES = [
     items:[
       {type:"link",label:"Brand Assets & Templates",desc:"Logos, one-pagers, marketing materials",url:"#",placeholder:true},
       {type:"document",label:"Gillis Brand Infographic",desc:"Brand positioning and value proposition",filename:"Gillis_Brand_Infographic.pdf"},
-      {type:"document",label:"Communication Guide — Tone & Voice",desc:"How to represent the Gillis brand",filename:"Communication_Guide.pdf"},
+      {type:"document",label:"Brand One-Pager",desc:"8.5x11 brand infographic for print",filename:"Brand_Infographic_One_Pager_8_5_x_11_-_FINAL.pdf"},
+      {type:"document",label:"Communication Guide — Tone & Voice",desc:"How to represent the Gillis brand",filename:"Communication_Guide-_Tone___Voice_.pdf"},
+      {type:"document",label:"Core Values Compass",desc:"Gillis core values and guiding principles",filename:"Gillis_Core_Values_Compass.pdf"},
       {type:"ask",label:"How should I position Gillis to a prospect?",prompt:"How should I describe Gillis to a prospect who's never heard of us? What's our value prop in plain language?"},
     ]
   },
@@ -189,8 +191,8 @@ const HUB_CATEGORIES = [
     category:"Programs & Incentives",
     items:[
       {type:"document",label:"Quarterly Incentive Plan",desc:"Current incentive structure and targets",filename:"RDOS_Quarterly_Incentive_Plan_2025.pdf"},
-      {type:"document",label:"Employee Referral Program",desc:"Refer someone, get rewarded",filename:"Employee_Referral_Program_2024.pdf"},
-      {type:"document",label:"Hotel Lead Referral Program",desc:"Refer a hotel, get rewarded",filename:"Hotel_Lead_Referral_Program_2024.pdf"},
+      {type:"document",label:"Employee Referral Program",desc:"Refer someone, get rewarded",filename:"Employee_Referral_Program_-_2024.pdf"},
+      {type:"document",label:"Hotel Lead Referral Program",desc:"Refer a hotel, get rewarded",filename:"Hotel_Lead_Referral_Program_-_2024.pdf"},
       {type:"document",label:"Kudos Program",desc:"Recognition and rewards",filename:"Kudos_Information.pdf"},
       {type:"ask",label:"How is my performance measured?",prompt:"What metrics and criteria are used to evaluate my performance at Gillis? Walk me through the performance checklist."},
     ]
@@ -200,10 +202,19 @@ const HUB_CATEGORIES = [
     items:[
       {type:"document",label:"ASM Onboarding Checklist",desc:"New hire onboarding steps",filename:"ASM_Hotel_Onboarding_Check_List.docx"},
       {type:"document",label:"RDOS Onboarding Checklist",desc:"Manager onboarding steps",filename:"RDOS_Hotel_Onboarding_Check_List_2025.docx"},
-      {type:"document",label:"Hotel Onboarding Timeline — Internal",desc:"Timeline for onboarding a new property",filename:"2026_Hotel_Onboarding_Timeline_Internal.pdf"},
-      {type:"document",label:"Hotel Onboarding Timeline — External",desc:"Client-facing onboarding timeline",filename:"2026_Hotel_Onboarding_Timeline_External.pdf"},
+      {type:"document",label:"Hotel Onboarding Timeline — Internal",desc:"Timeline for onboarding a new property",filename:"2026_Hotel_Onboarding_Timeline_-_Internal_Team.pdf"},
+      {type:"document",label:"Hotel Onboarding Timeline — External",desc:"Client-facing onboarding timeline",filename:"2026_Hotel_Onboarding_Timeline-_External.pdf"},
       {type:"document",label:"RDOS Performance Checklist",desc:"Performance evaluation criteria",filename:"RDOS_Performance_Checklist_Oct_2025.docx"},
       {type:"document",label:"Post Kick-Off Email Template",desc:"Email template after hotel onboarding kick-off",filename:"ASM_Post_Kick_Off_Email.docx"},
+      {type:"document",label:"Onboarding Checklist — Sample",desc:"Sample onboarding checklist template",filename:"Onboarding_Checklist_-_Sample.pdf"},
+    ]
+  },
+  {
+    category:"Sales Tools & Frameworks",
+    items:[
+      {type:"document",label:"Sales Call Planner",desc:"Call planning worksheet and template",filename:"Sales_Call_Planner.pdf"},
+      {type:"document",label:"Client Journey",desc:"The full Gillis client journey from first contact to partnership",filename:"Client_Journey.pdf"},
+      {type:"document",label:"Learner Journey",desc:"New hire learning path from Welcome to Achievement",filename:"Learner_Journey.pdf"},
     ]
   },
   {
@@ -1716,7 +1727,9 @@ export default function App() {
                           onClick={() => {
                             if (isPlaceholder) return;
                             if (item.type === "link") { window.open(item.url, "_blank"); }
-                            else if (item.type === "document" && isDocHosted) { window.open("/docs/" + item.filename, "_blank"); }
+                            else if (item.type === "document" && isDocHosted) {
+                              const a = document.createElement("a"); a.href = "/docs/" + item.filename; a.download = item.filename; a.target = "_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                            }
                             else if (item.type === "document") { setChatOpen(true); sendMessage("Tell me about the " + item.label + ". What's in it and what do I need to know?"); }
                             else { setChatOpen(true); sendMessage(item.prompt); }
                           }}
