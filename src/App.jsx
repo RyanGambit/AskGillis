@@ -1214,8 +1214,8 @@ export default function App() {
       <div style={{position:"relative",height:"100vh",overflow:"hidden",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
         {/* Background layers */}
         <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,#1a1035 0%,#2d1f5e 40%,#3D2B6B 70%,#1a1035 100%)",opacity:loginPhase>=1?0.6:1,transition:"opacity 1.4s ease"}}/>
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(/images/photo-1759038086397-2b7b1535da04.jpg)",backgroundSize:"cover",backgroundPosition:"center 40%",filter:"grayscale(100%)",opacity:loginPhase>=1?0.35:0,transform:loginPhase>=1?"scale(1)":"scale(1.03)",transition:"opacity 1.4s ease, transform 8s cubic-bezier(0.16,1,0.3,1)"}}/>
-        <div style={{position:"absolute",inset:0,background:"rgba(61,43,107,0.55)",mixBlendMode:"multiply",opacity:loginPhase>=1?1:0,transition:"opacity 1.2s ease 0.2s"}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:"url(/images/photo-1759038086397-2b7b1535da04.jpg)",backgroundSize:"cover",backgroundPosition:"center 40%",filter:"grayscale(100%)",opacity:loginPhase>=1?0.25:0,transform:loginPhase>=1?"scale(1)":"scale(1.03)",transition:"opacity 1.4s ease, transform 8s cubic-bezier(0.16,1,0.3,1)"}}/>
+        <div style={{position:"absolute",inset:0,background:"rgba(30,20,55,0.7)",mixBlendMode:"multiply",opacity:loginPhase>=1?1:0,transition:"opacity 1.2s ease 0.2s"}}/>
         <div style={{position:"absolute",inset:0,opacity:0.03,backgroundImage:"url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",backgroundSize:"128px",mixBlendMode:"overlay",pointerEvents:"none"}}/>
 
         {/* Splash screen */}
@@ -1241,7 +1241,7 @@ export default function App() {
               <img src="/images/gillis-logo-white.png" alt="Gillis" style={{width:220,maxWidth:"60vw",marginBottom:12}}/>
             </div>
             <div className={loginPhase>=2?"login-anim login-d2":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
-              <p style={{fontSize:16,fontWeight:400,color:"rgba(255,255,255,0.7)",margin:"0 0 28px",lineHeight:1.5}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
+              <p style={{fontSize:17,fontWeight:400,color:"rgba(255,255,255,0.85)",margin:"0 0 28px",lineHeight:1.5}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
             </div>
             <div className={loginPhase>=2?"login-anim login-d3":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
               <div style={{background:"rgba(15,12,25,0.88)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"32px 28px",textAlign:"left"}}>
@@ -1264,11 +1264,11 @@ export default function App() {
               </div>
             </div>
             <div className={loginPhase>=2?"login-anim login-d6":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
-              <div style={{marginTop:28,padding:"0 8px",textAlign:"center"}}>
-                <div style={{fontSize:13,fontStyle:"italic",color:"rgba(255,255,255,0.55)",lineHeight:1.7,marginBottom:8}}>"{loginQuote.text}"</div>
-                <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.25)",letterSpacing:"0.06em",textTransform:"uppercase"}}>— {loginQuote.attr}</div>
+              <div style={{marginTop:28,padding:"0 4px",textAlign:"center"}}>
+                <div style={{fontSize:15,fontStyle:"italic",color:"rgba(255,255,255,0.75)",lineHeight:1.7,marginBottom:10}}>"{loginQuote.text}"</div>
+                <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.4)",letterSpacing:"0.06em",textTransform:"uppercase"}}>— {loginQuote.attr}</div>
               </div>
-              <p style={{marginTop:16,fontSize:11,color:"rgba(255,255,255,0.25)",fontWeight:500}}>Need access? Contact your Gillis representative.</p>
+              <p style={{marginTop:18,fontSize:12,color:"rgba(255,255,255,0.35)",fontWeight:500}}>Need access? Contact your Gillis representative.</p>
             </div>
           </div>
         </div>
