@@ -1295,7 +1295,7 @@ export default function App() {
       {/* SIDEBAR */}
       <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
         <div style={{padding:"16px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",flexDirection:"column",gap:6}}>
-          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{width:140,alignSelf:"flex-start",opacity:0.85}}/>
+          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{width:100,alignSelf:"flex-start",opacity:0.85}}/>
           <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div>
         </div>
 
