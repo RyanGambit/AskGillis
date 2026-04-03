@@ -899,8 +899,8 @@ export default function App() {
   // Login animation phases
   useEffect(() => {
     if (screen !== "login") return;
-    const t1 = setTimeout(() => setLoginPhase(1), 1800);
-    const t2 = setTimeout(() => setLoginPhase(2), 2400);
+    const t1 = setTimeout(() => setLoginPhase(1), 2800);
+    const t2 = setTimeout(() => setLoginPhase(2), 3800);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [screen]);
 
@@ -1186,7 +1186,6 @@ export default function App() {
           <div style={{opacity:0,animation:"loginLogoIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards"}}>
             <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:64}}/>
           </div>
-          <div style={{opacity:0,animation:"loginFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.5s forwards",fontSize:28,fontWeight:800,color:"white",marginTop:16,letterSpacing:"-0.02em"}}>AskGillis</div>
         </div>
 
         {/* Top-left logo */}
