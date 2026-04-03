@@ -1184,7 +1184,7 @@ export default function App() {
         {/* Splash screen */}
         <div style={{position:"absolute",inset:0,zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",opacity:loginPhase>=1?0:1,transform:loginPhase>=1?"scale(0.95)":"scale(1)",transition:"opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",pointerEvents:loginPhase>=1?"none":"auto"}}>
           <div style={{opacity:0,animation:"loginLogoIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards"}}>
-            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:64}}/>
+            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:80}}/>
           </div>
           <div style={{marginTop:24,height:20,overflow:"hidden"}}>
             <div style={{animation:"splashWords 2.4s ease 0.6s forwards",opacity:0}}>
@@ -1197,14 +1197,14 @@ export default function App() {
 
         {/* Top-left logo */}
         <div style={{position:"absolute",top:32,left:32,zIndex:6,opacity:loginPhase>=2?1:0,transition:"opacity 0.6s ease 1s"}}>
-          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:36,opacity:0.6}}/>
+          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:28,opacity:0.5}}/>
         </div>
 
         {/* Login form */}
         <div style={{position:"absolute",inset:0,zIndex:5,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 28px",opacity:loginPhase>=2?1:0,pointerEvents:loginPhase>=2?"auto":"none",transition:"opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s"}}>
           <div style={{width:"100%",maxWidth:400,textAlign:"center"}}>
             <div className={loginPhase>=2?"login-anim login-d1":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
-              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:44,marginBottom:8}}/>
+              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:56,marginBottom:12}}/>
             </div>
             <div className={loginPhase>=2?"login-anim login-d2":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
               <p style={{fontSize:16,fontWeight:400,color:"rgba(255,255,255,0.7)",margin:"0 0 28px",lineHeight:1.5}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
@@ -1257,7 +1257,7 @@ export default function App() {
         <div style={{width:"100%",maxWidth:520}}>
           <div style={{textAlign:"center",marginBottom:32}}>
             <div style={{marginBottom:16}}>
-              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:40}}/>
+              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:48}}/>
             </div>
             <p style={{color:"rgba(255,255,255,0.7)",fontSize:16,fontWeight:500,margin:"0 0 4px"}}>Welcome, {userName}.</p>
             <p style={{color:"rgba(255,255,255,0.4)",fontSize:14,margin:0}}>How will you be using AskGillis?</p>
@@ -1295,7 +1295,7 @@ export default function App() {
       {/* SIDEBAR */}
       <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
         <div style={{padding:"16px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",flexDirection:"column",gap:6}}>
-          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:24,alignSelf:"flex-start",opacity:0.9}}/>
+          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:28,alignSelf:"flex-start",opacity:0.85}}/>
           <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div>
         </div>
 
