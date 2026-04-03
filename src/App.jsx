@@ -919,6 +919,9 @@ export default function App() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [screen]);
 
+  // Cleanup streaming on unmount
+  useEffect(() => () => { if (streamTickerRef.current) clearInterval(streamTickerRef.current); }, []);
+
   // Responsive: track window width
   useEffect(() => {
     const onResize = () => setWinW(window.innerWidth);
@@ -1234,7 +1237,7 @@ export default function App() {
                 </div>
                 <div style={{marginBottom:24}}>
                   <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Invitation Code</label>
-                  <input type="text" value={code} onChange={e => {setCode(e.target.value);setErr("");}} placeholder="Enter your code"
+                  <input type="text" autoComplete="off" value={code} onChange={e => {setCode(e.target.value);setErr("");}} placeholder="Enter your code"
                     onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
                     style={{width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${err?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.18)"}`,background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
                   {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:0}}>{err}</p>}
@@ -1377,14 +1380,14 @@ export default function App() {
             Help & FAQ
           </button>
         </div>
-        <div style={{padding:"4px 10px"}}>
-          <button onClick={() => {if(mode==="seller"){setMode("manager");setMgrView("team");setSelectedUser(null);setActiveModule("__mgr");setChatOpen(false);}else{setMode("seller");setActiveModule("onboarding");setChatOpen(true);}}}
+        {(mode === "manager" || userRole === "manager") && <div style={{padding:"4px 10px"}}>
+          <button onClick={() => {if(mode==="seller"){setMode("manager");setMgrView("team");setSelectedUser(null);setActiveModule("__mgr");setChatOpen(false);}else{setMode("seller");setActiveModule("onboarding");setChatOpen(window.innerWidth>=1024);}}}
             style={{width:"100%",padding:"6px 14px",borderRadius:7,border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",color:"rgba(255,255,255,0.25)",fontSize:10.5,textAlign:"left"}}
             onMouseEnter={e => e.currentTarget.style.color="rgba(255,255,255,0.5)"}
             onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.25)"}>
-            {mode === "seller" ? (userRole === "manager" ? "Switch to Manager" : "") : "Switch to Seller Mode"}
+            {mode === "seller" ? "Switch to Manager" : "Switch to Seller Mode"}
           </button>
-        </div>
+        </div>}
         <div style={{padding:"6px 20px 14px",borderTop:`0.5px solid ${sB}`}}>
           <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{userName}</div>
         </div>
@@ -1405,7 +1408,7 @@ export default function App() {
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
               onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              {!isMobile && <>Search<span style={{fontSize:9,color:G.dim,marginLeft:2}}>&#8984;K</span></>}
+              {!isMobile && <>Search<span style={{fontSize:9,color:G.dim,marginLeft:2}}>{navigator.platform?.includes("Mac")?"⌘":"Ctrl+"}K</span></>}
             </button>
             <button onClick={() => setFbOpen(true)} title="Send Feedback" style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
@@ -1844,7 +1847,11 @@ export default function App() {
               onMouseLeave={e => e.currentTarget.style.color=G.muted}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setChatOpen(false);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:G.muted,padding:4}}>x</button>
+            <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setChatOpen(false);}} style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
+              onMouseEnter={e => e.currentTarget.style.color=G.dark}
+              onMouseLeave={e => e.currentTarget.style.color=G.muted}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </div>
 
           <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:"14px 12px",display:"flex",flexDirection:"column",gap:10}}>
@@ -2034,7 +2041,7 @@ export default function App() {
         </div>
       )}
 
-      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}}`}</style>
+      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}button[data-copy]{opacity:0.6!important}}`}</style>
     </div>
   );
 }
