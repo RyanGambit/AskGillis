@@ -1186,6 +1186,13 @@ export default function App() {
           <div style={{opacity:0,animation:"loginLogoIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards"}}>
             <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:64}}/>
           </div>
+          <div style={{marginTop:24,height:20,overflow:"hidden"}}>
+            <div style={{animation:"splashWords 2.4s ease 0.6s forwards",opacity:0}}>
+              <div style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)",textAlign:"center",height:20,lineHeight:"20px",letterSpacing:"0.08em"}}>Loading...</div>
+              <div style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)",textAlign:"center",height:20,lineHeight:"20px",letterSpacing:"0.08em"}}>Planning...</div>
+              <div style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)",textAlign:"center",height:20,lineHeight:"20px",letterSpacing:"0.08em"}}>Gillis-ing...</div>
+            </div>
+          </div>
         </div>
 
         {/* Top-left logo */}
@@ -1197,7 +1204,7 @@ export default function App() {
         <div style={{position:"absolute",inset:0,zIndex:5,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 28px",opacity:loginPhase>=2?1:0,pointerEvents:loginPhase>=2?"auto":"none",transition:"opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s"}}>
           <div style={{width:"100%",maxWidth:400,textAlign:"center"}}>
             <div className={loginPhase>=2?"login-anim login-d1":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
-              <h1 style={{fontSize:32,fontWeight:800,color:"white",margin:"0 0 8px",letterSpacing:"-0.02em"}}>AskGillis</h1>
+              <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:44,marginBottom:8}}/>
             </div>
             <div className={loginPhase>=2?"login-anim login-d2":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
               <p style={{fontSize:16,fontWeight:400,color:"rgba(255,255,255,0.7)",margin:"0 0 28px",lineHeight:1.5}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
@@ -1230,6 +1237,7 @@ export default function App() {
 
         <style>{`
           @keyframes loginLogoIn{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:scale(1)}}
+          @keyframes splashWords{0%{opacity:1;transform:translateY(0)}30%{opacity:1;transform:translateY(0)}40%{opacity:1;transform:translateY(-20px)}65%{opacity:1;transform:translateY(-20px)}75%{opacity:1;transform:translateY(-40px)}100%{opacity:1;transform:translateY(-40px)}}
           @keyframes loginFadeUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
           .login-anim{opacity:0;transform:translateY(20px)}
           .login-d1{animation:loginFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.3s forwards}
