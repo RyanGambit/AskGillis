@@ -27,14 +27,14 @@ const LOGIN_QUOTES = [
 const FEEDBACK_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFSCGAPoKO8xw9LFnuW-6nFdP1e65kCB2Bm0MUJjkxbj_Uj_CGLsq16bsJx1tSt6jL/exec";
 
 const G = {
-  bg:"#F5F4F8", white:"#FFFFFF",
-  purple:"#3D2B6B", purpleLight:"#F3F0FA", purpleBorder:"#D8D0ED", purpleDark:"#2d1f5e",
+  bg:"#F3F2F7", white:"#FFFFFF",
+  purple:"#3D2B6B", purpleLight:"#F0EDFA", purpleBorder:"#D8D0ED", purpleDark:"#2d1f5e",
   teal:"#1ABBA6", tealLight:"#EEFBF9", tealBorder:"#B0E8E0", tealDark:"#0E8A7A",
   orange:"#E8875B", orangeLight:"#FFF4EE", orangeBorder:"#F5C9B0",
   gold:"#D4A843", goldLight:"#FDF8EC", goldBorder:"#E8D49C",
   lilac:"#7C6BC4", lilacLight:"#F0EDFA", lilacBorder:"#C4BBE8",
-  dark:"#2c2540", text:"#5a5370", muted:"#8a839a", dim:"#b5b0c0",
-  border:"#eae8f0", borderLight:"#f0eef4",
+  dark:"#1e1832", text:"#4a4560", muted:"#8a839a", dim:"#b5b0c0",
+  border:"#e4e1ec", borderLight:"#edeaf2",
 };
 
 const MODULES = [
@@ -1331,7 +1331,7 @@ export default function App() {
       {/* SIDEBAR BACKDROP (mobile/tablet) */}
       {isCompact && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:90}}/>}
       {/* SIDEBAR */}
-      <div style={{width:220,background:G.purple,display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
+      <div style={{width:220,background:"linear-gradient(180deg,#3D2B6B 0%,#2d1f5e 100%)",display:"flex",flexDirection:"column",flexShrink:0,...(isCompact?{position:"fixed",left:sidebarOpen?0:-240,top:0,bottom:0,zIndex:95,transition:"left 0.25s ease",boxShadow:sidebarOpen?"4px 0 20px rgba(0,0,0,0.3)":"none"}:{})}}>
         <div style={{padding:"16px 20px",borderBottom:`0.5px solid ${sB}`,display:"flex",flexDirection:"column",gap:6}}>
           <img src="/images/gillis-logo-white.png" alt="Gillis" style={{width:100,alignSelf:"flex-start",opacity:0.85}}/>
           <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:G.teal}}>{mode === "manager" ? "Manager Dashboard" : "Sales Platform"}</div>
@@ -1415,7 +1415,7 @@ export default function App() {
 
       {/* CENTER CONTENT */}
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-        <div style={{padding:isMobile?"10px 14px":"12px 28px",borderBottom:`1px solid ${G.border}`,background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div style={{padding:isMobile?"10px 14px":"14px 28px",borderBottom:"none",background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {isCompact && <button onClick={() => setSidebarOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",color:G.dark}}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
@@ -1850,7 +1850,7 @@ export default function App() {
 
       {/* TAMMY CHAT PANEL */}
       {chatOpen && (
-        <div style={{...(isCompact?{position:"fixed",top:0,right:0,bottom:0,width:isMobile?"100%":420,zIndex:85,boxShadow:"-4px 0 20px rgba(0,0,0,0.15)"}:{width:420,flexShrink:0}),borderLeft:isCompact?"none":`1px solid ${G.border}`,background:G.white,display:"flex",flexDirection:"column"}}>
+        <div style={{...(isCompact?{position:"fixed",top:0,right:0,bottom:0,width:isMobile?"100%":420,zIndex:85,boxShadow:"-8px 0 30px rgba(0,0,0,0.12)"}:{width:420,flexShrink:0,boxShadow:"-1px 0 6px rgba(0,0,0,0.03)"}),borderLeft:"none",background:G.white,display:"flex",flexDirection:"column"}}>
           <div style={{padding:"12px 16px",borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             <TammyAvatar size={30}/>
             <div style={{flex:1}}>
@@ -1904,7 +1904,7 @@ export default function App() {
             {messages.map((m,i) => m.isTammy ? (
               <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",position:"relative"}} className="tammy-msg">
                 <TammyAvatar size={24}/>
-                <div style={{flex:1,padding:"10px 13px",background:G.bg,border:`1px solid ${G.border}`,borderRadius:"2px 12px 12px 12px",fontSize:12.5,color:G.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.text}</div>
+                <div style={{flex:1,padding:"11px 14px",background:G.bg,border:`1px solid ${G.border}`,borderRadius:"2px 14px 14px 14px",fontSize:13,color:G.text,lineHeight:1.75,whiteSpace:"pre-wrap"}}>{m.text}</div>
                 {m.text && <button onClick={() => {try{navigator.clipboard.writeText(m.text);const btn=document.querySelector(`[data-copy="${i}"]`);if(btn){btn.textContent="Copied!";setTimeout(()=>btn.textContent="Copy",1500);}}catch{}}} data-copy={i}
                   style={{position:"absolute",top:2,right:2,padding:"2px 6px",borderRadius:4,border:"none",background:G.borderLight,color:G.dim,fontSize:9,cursor:"pointer",fontFamily:"inherit",opacity:0,transition:"opacity 0.15s"}}
                   onMouseEnter={e => e.currentTarget.style.opacity=1}
@@ -1912,7 +1912,7 @@ export default function App() {
               </div>
             ) : (
               <div key={i} style={{display:"flex",justifyContent:"flex-end"}}>
-                <div style={{maxWidth:"85%",padding:"10px 13px",background:G.purpleLight,border:`1px solid ${G.purpleBorder}`,borderRadius:"12px 2px 12px 12px",fontSize:12.5,color:G.dark,lineHeight:1.65,whiteSpace:"pre-wrap"}}>{m.text}</div>
+                <div style={{maxWidth:"85%",padding:"11px 14px",background:G.purpleLight,border:`1px solid ${G.purpleBorder}`,borderRadius:"14px 2px 14px 14px",fontSize:13,color:G.dark,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.text}</div>
               </div>
             ))}
 
@@ -2061,7 +2061,7 @@ export default function App() {
         </div>
       )}
 
-      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}button[data-copy]{opacity:0.6!important}}`}</style>
+      <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}button[data-copy]{opacity:0.6!important}}button{transition:all 0.15s ease}::selection{background:rgba(26,187,166,0.2)}`}</style>
     </div>
   );
 }
