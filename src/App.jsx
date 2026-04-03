@@ -333,6 +333,7 @@ const MODE_PROMPTS = {
   social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct. When drafting content for them (connection requests, messages, posts), write the full draft — word limit doesn't apply to drafted content.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
   hub:"The user is asking about Gillis internal resources, policies, systems, or processes. Answer directly from what you know. If it's in the knowledge base, reference it. If you don't have the specific answer, say so clearly and suggest who they should contact. Don't coach, just inform. Keep it brief.",
+  help:"The user is browsing help. If they ask a question, answer it directly and briefly. You can suggest which module would be best for what they need.",
 };
 
 // ---- UI Components ----
@@ -384,6 +385,9 @@ function detectCategory(module, firstMsg) {
   if (module === "methodology") return "methodology_learning";
   if (module === "social") return "social_selling";
   if (module === "gameplan") return "weekly_planning";
+  if (module === "hub") return "internal_resources";
+  if (module === "__mgr") return "manager_coaching";
+  if (module === "help") return "help";
   if (module === "situation") {
     const m = (firstMsg || "").toLowerCase();
     if (m.includes("objection") || m.includes("send me your info") || m.includes("rate is too") || m.includes("call me back")) return "objection_handling";
@@ -1127,7 +1131,7 @@ export default function App() {
       timestamp: new Date().toISOString(),
       email: email,
       mode: mode,
-      module: MODULES.find(m => m.id === activeModule)?.label || activeModule,
+      module: mode==="manager"?"Manager Dashboard":(MODULES.find(m => m.id === (prevModuleRef.current||activeModule))?.label || activeModule),
       context: getCtx(),
       feedback: fbText.trim(),
       conversation: transcript || "(no conversation yet)",
@@ -1348,7 +1352,7 @@ export default function App() {
             })}
           </div>
           <div style={{padding:"10px 10px"}}>
-            <button onClick={() => setChatOpen(p=>!p)} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:`0.5px solid ${chatOpen?"rgba(26,187,166,0.3)":sB}`,background:chatOpen?"rgba(26,187,166,0.08)":"transparent",color:chatOpen?G.teal:sT,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+            <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setChatOpen(p=>!p);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:`0.5px solid ${chatOpen?"rgba(26,187,166,0.3)":sB}`,background:chatOpen?"rgba(26,187,166,0.08)":"transparent",color:chatOpen?G.teal:sT,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
               <TammyAvatar size={18}/>{chatOpen ? "Close Tammy" : "Talk to Tammy"}
             </button>
           </div>
@@ -1817,7 +1821,7 @@ export default function App() {
               <div style={{fontSize:13,fontWeight:600}}>Tammy</div>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mode==="manager"?"#8B5CF6":mod.color}}>{mode==="manager"?"Coaching the Coach":("Coaching: "+mod.label)}</div>
             </div>
-            {messages.length > 0 && <button onClick={() => {if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;}} title="New conversation" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
+            {messages.length > 0 && <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;}} title="New conversation" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
               onMouseEnter={e => e.currentTarget.style.color=G.teal}
               onMouseLeave={e => e.currentTarget.style.color=G.muted}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1827,7 +1831,7 @@ export default function App() {
               onMouseLeave={e => e.currentTarget.style.color=G.muted}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <button onClick={() => {if(messages.length>=2)saveSession();setChatOpen(false);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:G.muted,padding:4}}>x</button>
+            <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setChatOpen(false);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:G.muted,padding:4}}>x</button>
           </div>
 
           <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:"14px 12px",display:"flex",flexDirection:"column",gap:10}}>
@@ -1882,7 +1886,18 @@ export default function App() {
             )}
           </div>
 
-          <div style={{padding:"10px 12px",borderTop:`1px solid ${G.border}`,flexShrink:0}}>
+          {messages.length > 0 && (
+            <div style={{padding:"6px 12px 0",flexShrink:0}}>
+              <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;}}
+                style={{width:"100%",padding:"6px",borderRadius:6,border:`1px solid ${G.border}`,background:G.bg,color:G.muted,fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}
+                onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
+                onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New conversation
+              </button>
+            </div>
+          )}
+          <div style={{padding:"10px 12px",borderTop:messages.length>0?"none":`1px solid ${G.border}`,flexShrink:0}}>
             <div style={{display:"flex",gap:8,alignItems:"flex-end",background:G.bg,border:`1px solid ${G.border}`,borderRadius:10,padding:"4px 4px 4px 12px"}}>
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}}
@@ -1942,8 +1957,8 @@ export default function App() {
                   if (r.action === "navigate") { setActiveModule(r.module); }
                   else if (r.action === "link") { window.open(r.url, "_blank"); }
                   else if (r.action === "doc") { window.open("/docs/" + r.filename, "_blank"); }
-                  else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 100); }
-                  else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 100); }
+                  else if (r.action === "drill") { setActiveModule("sharpener"); setTimeout(() => {setChatOpen(true);sendMessage("Here's my drill (" + r.category + "):\n\n" + r.scenario + "\n\nLet me give it a shot.");}, 300); }
+                  else if (r.action === "prompt") { setActiveModule(r.module); setTimeout(() => {setChatOpen(true);sendMessage(r.prompt);}, 300); }
                 }} style={{padding:"12px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,borderBottom:`1px solid ${G.borderLight}`,transition:"background 0.1s"}}
                   onMouseEnter={e => e.currentTarget.style.background=G.bg}
                   onMouseLeave={e => e.currentTarget.style.background="transparent"}>
@@ -1986,7 +2001,7 @@ export default function App() {
               onBlur={e => e.currentTarget.style.borderColor=G.border}
               autoFocus/>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14}}>
-              <div style={{fontSize:11,color:G.dim}}>{messages.length ? `Includes ${messages.length} message${messages.length !== 1 ? "s" : ""} from ${mod.label}` : "No conversation to attach"}</div>
+              <div style={{fontSize:11,color:G.dim}}>{messages.length ? `Includes ${messages.length} message${messages.length !== 1 ? "s" : ""} from ${mode==="manager"?"Manager Dashboard":mod.label}` : "No conversation to attach"}</div>
               <div style={{display:"flex",gap:8}}>
                 <button onClick={() => {setFbOpen(false);setFbText("");}} style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
                 <button onClick={submitFeedback} disabled={!fbText.trim()||fbSending}
