@@ -1184,14 +1184,14 @@ export default function App() {
         {/* Splash screen */}
         <div style={{position:"absolute",inset:0,zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",opacity:loginPhase>=1?0:1,transform:loginPhase>=1?"scale(0.95)":"scale(1)",transition:"opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",pointerEvents:loginPhase>=1?"none":"auto"}}>
           <div style={{opacity:0,animation:"loginLogoIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards"}}>
-            <img src="/images/gillis-logo-white.svg" alt="Gillis" style={{height:64}}/>
+            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:64}}/>
           </div>
           <div style={{opacity:0,animation:"loginFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.5s forwards",fontSize:28,fontWeight:800,color:"white",marginTop:16,letterSpacing:"-0.02em"}}>AskGillis</div>
         </div>
 
         {/* Top-left logo */}
         <div style={{position:"absolute",top:32,left:32,zIndex:6,opacity:loginPhase>=2?1:0,transition:"opacity 0.6s ease 1s"}}>
-          <img src="/images/gillis-logo-white.svg" alt="Gillis" style={{height:36,opacity:0.6}}/>
+          <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:36,opacity:0.6}}/>
         </div>
 
         {/* Login form */}
