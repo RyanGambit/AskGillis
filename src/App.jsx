@@ -1432,8 +1432,8 @@ export default function App() {
                       {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
                     </div>
                     <div onClick={() => {setChatOpen(true);sendMessage(item.prompt);}} style={{flex:1,cursor:"pointer"}}
-                      onMouseEnter={e => e.currentTarget.querySelector('.ob-label').style.color = G.teal}
-                      onMouseLeave={e => e.currentTarget.querySelector('.ob-label').style.color = done ? G.dim : G.dark}>
+                      onMouseEnter={e => {const el=e.currentTarget.querySelector('.ob-label');if(el)el.style.color=G.teal;}}
+                      onMouseLeave={e => {const el=e.currentTarget.querySelector('.ob-label');if(el)el.style.color=done?G.dim:G.dark;}}>
                       <div className="ob-label" style={{fontSize:13,fontWeight:500,color:done ? G.dim : G.dark,textDecoration:done ? "line-through" : "none",transition:"color 0.15s"}}>{item.label}</div>
                       <div style={{fontSize:11,color:G.dim,marginTop:2}}>Suggested: {item.week}</div>
                     </div>
