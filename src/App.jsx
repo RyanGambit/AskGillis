@@ -838,6 +838,7 @@ export default function App() {
   const searchRef = useRef(null);
   const [faqOpen, setFaqOpen] = useState(null);
   const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  const [loginPhase, setLoginPhase] = useState(0); // 0=splash, 1=transition, 2=login
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = winW < 768;
   const isTablet = winW >= 768 && winW < 1024;
@@ -894,6 +895,14 @@ export default function App() {
       .sort((a,b) => b.score - a.score)
       .slice(0, 12);
   }, [searchQuery, searchIndex]);
+
+  // Login animation phases
+  useEffect(() => {
+    if (screen !== "login") return;
+    const t1 = setTimeout(() => setLoginPhase(1), 1800);
+    const t2 = setTimeout(() => setLoginPhase(2), 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [screen]);
 
   // Responsive: track window width
   useEffect(() => {
@@ -1165,31 +1174,71 @@ export default function App() {
   // ---- LOGIN ----
   if (screen === "login") {
     return (
-      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(160deg,#1a1035 0%,${G.purpleDark} 40%,${G.purple} 70%,#1a1035 100%)`,padding:20}}>
-        <div style={{width:"100%",maxWidth:400}}>
-          <div style={{textAlign:"center",marginBottom:36}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:12,marginBottom:20}}>
-              <GillisLogo size={38}/><span style={{fontSize:26,fontWeight:700,color:"white"}}>AskGillis</span>
-            </div>
-            <p style={{color:"rgba(255,255,255,0.5)",fontSize:14,lineHeight:1.6,margin:0}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
+      <div style={{position:"relative",height:"100vh",overflow:"hidden",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+        {/* Background layers */}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,#1a1035 0%,#2d1f5e 40%,#3D2B6B 70%,#1a1035 100%)",opacity:loginPhase>=1?0.6:1,transition:"opacity 1.4s ease"}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:"url(/images/photo-1759038086397-2b7b1535da04.jpg)",backgroundSize:"cover",backgroundPosition:"center 40%",filter:"grayscale(100%)",opacity:loginPhase>=1?0.35:0,transform:loginPhase>=1?"scale(1)":"scale(1.03)",transition:"opacity 1.4s ease, transform 8s cubic-bezier(0.16,1,0.3,1)"}}/>
+        <div style={{position:"absolute",inset:0,background:"rgba(61,43,107,0.55)",mixBlendMode:"multiply",opacity:loginPhase>=1?1:0,transition:"opacity 1.2s ease 0.2s"}}/>
+        <div style={{position:"absolute",inset:0,opacity:0.03,backgroundImage:"url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",backgroundSize:"128px",mixBlendMode:"overlay",pointerEvents:"none"}}/>
+
+        {/* Splash screen */}
+        <div style={{position:"absolute",inset:0,zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",opacity:loginPhase>=1?0:1,transform:loginPhase>=1?"scale(0.95)":"scale(1)",transition:"opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",pointerEvents:loginPhase>=1?"none":"auto"}}>
+          <div style={{opacity:0,animation:"loginLogoIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards"}}>
+            <img src="/images/gillis-logo.svg" alt="Gillis" style={{height:64,filter:"brightness(0) invert(1)"}}/>
           </div>
-          <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"32px 28px"}}>
-            <div style={{marginBottom:18}}>
-              <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.4)",marginBottom:7,letterSpacing:"0.06em",textTransform:"uppercase"}}>Email</label>
-              <input type="email" value={email} onChange={e => {setEmail(e.target.value);setErr("");}} placeholder="you@hotel.com"
-                onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
-                style={{width:"100%",padding:"12px 14px",borderRadius:9,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.06)",color:"white",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+          <div style={{opacity:0,animation:"loginFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.5s forwards",fontSize:28,fontWeight:800,color:"white",marginTop:16,letterSpacing:"-0.02em"}}>AskGillis</div>
+        </div>
+
+        {/* Top-left logo */}
+        <div style={{position:"absolute",top:32,left:32,zIndex:6,opacity:loginPhase>=2?1:0,transition:"opacity 0.6s ease 1s"}}>
+          <img src="/images/gillis-logo.svg" alt="Gillis" style={{height:36,filter:"brightness(0) invert(1)",opacity:0.6}}/>
+        </div>
+
+        {/* Login form */}
+        <div style={{position:"absolute",inset:0,zIndex:5,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 28px",opacity:loginPhase>=2?1:0,pointerEvents:loginPhase>=2?"auto":"none",transition:"opacity 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s"}}>
+          <div style={{width:"100%",maxWidth:400,textAlign:"center"}}>
+            <div className={loginPhase>=2?"login-anim login-d1":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
+              <h1 style={{fontSize:32,fontWeight:800,color:"white",margin:"0 0 8px",letterSpacing:"-0.02em"}}>AskGillis</h1>
             </div>
-            <div style={{marginBottom:24}}>
-              <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.4)",marginBottom:7,letterSpacing:"0.06em",textTransform:"uppercase"}}>Invitation Code</label>
-              <input type="text" value={code} onChange={e => {setCode(e.target.value);setErr("");}} placeholder="Enter code"
-                onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
-                style={{width:"100%",padding:"12px 14px",borderRadius:9,border:`1px solid ${err?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.1)"}`,background:"rgba(255,255,255,0.06)",color:"white",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
-              {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:0}}>{err}</p>}
+            <div className={loginPhase>=2?"login-anim login-d2":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
+              <p style={{fontSize:16,fontWeight:400,color:"rgba(255,255,255,0.7)",margin:"0 0 28px",lineHeight:1.5}}>AI-powered sales coaching built on 28 years of hospitality expertise.</p>
             </div>
-            <button onClick={handleLogin} style={{width:"100%",padding:"13px 0",borderRadius:9,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Get Started</button>
+            <div className={loginPhase>=2?"login-anim login-d3":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
+              <div style={{background:"rgba(15,12,25,0.88)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"32px 28px",textAlign:"left"}}>
+                <div style={{marginBottom:18}}>
+                  <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Email</label>
+                  <input type="email" value={email} onChange={e => {setEmail(e.target.value);setErr("");}} placeholder="you@hotel.com"
+                    onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
+                    style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                </div>
+                <div style={{marginBottom:24}}>
+                  <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Invitation Code</label>
+                  <input type="text" value={code} onChange={e => {setCode(e.target.value);setErr("");}} placeholder="Enter your code"
+                    onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
+                    style={{width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${err?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.18)"}`,background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                  {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:0}}>{err}</p>}
+                </div>
+                <button onClick={handleLogin} style={{width:"100%",padding:"15px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 24px rgba(26,187,166,0.25)",transition:"transform 0.15s, box-shadow 0.15s"}}
+                  onMouseEnter={e => {e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 30px rgba(26,187,166,0.35)";}}
+                  onMouseLeave={e => {e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 24px rgba(26,187,166,0.25)";}}>Get Started</button>
+              </div>
+            </div>
+            <div className={loginPhase>=2?"login-anim login-d6":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
+              <p style={{marginTop:20,fontSize:12,color:"rgba(255,255,255,0.35)",fontWeight:500}}>Need access? Contact your Gillis representative.</p>
+            </div>
           </div>
         </div>
+
+        <style>{`
+          @keyframes loginLogoIn{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:scale(1)}}
+          @keyframes loginFadeUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+          .login-anim{opacity:0;transform:translateY(20px)}
+          .login-d1{animation:loginFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.3s forwards}
+          .login-d2{animation:loginFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.4s forwards}
+          .login-d3{animation:loginFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.5s forwards}
+          .login-d6{animation:loginFadeUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.85s forwards}
+          .login-anim input:focus{background:rgba(255,255,255,0.14)!important;border-color:rgba(26,187,166,0.5)!important}
+        `}</style>
       </div>
     );
   }
