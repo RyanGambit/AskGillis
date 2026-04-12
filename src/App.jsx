@@ -51,7 +51,7 @@ const MODULES = [
 
 const ONBOARDING_ITEMS = [
   {id:"ob1",label:"Gillis brand, values, and culture",tammy:true,prompt:"Tell me about Gillis brand values and culture.",week:"Week 1"},
-  {id:"ob2",label:"ASM role and hotel portfolio overview",tammy:true,prompt:"Explain the ASM role. What does my day look like?",week:"Week 1"},
+  {id:"ob2",label:"RDOS role and hotel portfolio overview",tammy:true,prompt:"Explain the RDOS role. What does my day look like?",week:"Week 1"},
   {id:"ob3",label:"Room to Grow: Gillis Strategic Selling",tammy:true,prompt:"Introduce the Gillis Strategic Selling approach.",week:"Week 2"},
   {id:"ob4",label:"Hotel onboarding process",tammy:true,prompt:"Walk me through onboarding a new hotel property.",week:"Week 2"},
   {id:"ob5",label:"Time management and Dynamic Market Assessment",tammy:true,prompt:"Explain time management and the Dynamic Market Assessment.",week:"Week 2"},
@@ -218,7 +218,7 @@ const HUB_CATEGORIES = [
   {
     category:"Onboarding & Training Docs",
     items:[
-      {type:"document",label:"ASM Onboarding Checklist",desc:"New hire onboarding steps",filename:"ASM_Hotel_Onboarding_Check_List.docx"},
+      {type:"document",label:"RDOS Onboarding Checklist (New Hire)",desc:"New hire onboarding steps",filename:"ASM_Hotel_Onboarding_Check_List.docx"},
       {type:"document",label:"RDOS Onboarding Checklist",desc:"Manager onboarding steps",filename:"RDOS_Hotel_Onboarding_Check_List_2025.docx"},
       {type:"document",label:"Hotel Onboarding Timeline — Internal",desc:"Timeline for onboarding a new property",filename:"2026_Hotel_Onboarding_Timeline_-_Internal_Team.pdf"},
       {type:"document",label:"Hotel Onboarding Timeline — External",desc:"Client-facing onboarding timeline",filename:"2026_Hotel_Onboarding_Timeline-_External.pdf"},
