@@ -18,6 +18,7 @@ import AdminPanel from "./views/AdminPanel.jsx";
 import Brands from "./views/Brands.jsx";
 import { getBrandKB } from "./data/brandKB/index.js";
 import { BRANDS } from "./data/brandsData.js";
+import { logSession as logSupabaseSession } from "./lib/sessionLogger.js";
 
 // ---- UI Components ----
 const GillisLogo = ({size=32}) => (
@@ -478,7 +479,7 @@ function KBAdmin({ kbWords, hasOverride, onUpdate, onReset }) {
 
 // ---- Main App ----
 export default function App() {
-  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, guestSignIn, isGuestSession, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
+  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, guestSignIn, isGuestSession, devOverride, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
   const { isDevMode } = useDevMode();
   const [screen, setScreen] = useState("login");
   const [email, setEmail] = useState("");
@@ -767,9 +768,19 @@ export default function App() {
     const updated = [s, ...sessions].slice(0, 30);
     setSessions(updated);
     saveSessions(updated);
-    // Log rich session to team data
+    // Log rich session to team data (localStorage write-through cache)
     logTeamActivity(userName, mod4save, userRole, { category: cat, firstMessage: firstMsg.slice(0, 120), messageCount: messages.length, duration });
     setTeamData(loadTeamData());
+    // Log to Supabase (skipped for guest/dev sessions)
+    logSupabaseSession({
+      module: mod4save,
+      category: cat,
+      first_message: firstMsg.slice(0, 500),
+      message_count: messages.length,
+      duration,
+      messages: messages.slice(0, 50),
+      brand_slug: mod4save === 'brands' ? selectedBrand : null,
+    }, { user, profile, isGuestSession, devOverride });
   };
 
   const getCtx = () => {

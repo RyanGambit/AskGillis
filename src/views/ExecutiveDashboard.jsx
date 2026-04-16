@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { G } from '../constants/colors.js';
 import { USERS, PODS } from '../data/userSeed.js';
+import { getOrgDashboardData, TOPIC_LABELS } from '../lib/dashboardQueries.js';
 import {
   getMockOrgStats,
   getMockPodStats,
@@ -342,11 +343,40 @@ function EngagementLeaderboard({ onSellerClick }) {
 export default function ExecutiveDashboard({ profile, onPodClick, onSellerClick, onSwitchToSeller }) {
   const [timeRange, setTimeRange] = useState('This Week');
 
-  const orgStats = useMemo(() => getMockOrgStats(), []);
-  const chartData = useMemo(() => getMockActivityChart(14), []);
-  const moduleData = useMemo(() => getMockModuleBreakdown(), []);
+  // Try real Supabase data first
+  const [liveData, setLiveData] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    getOrgDashboardData().then(result => {
+      if (cancelled) return;
+      if (result.source === 'supabase' && result.data && result.data.totalSessions > 0) {
+        setLiveData(result.data);
+        setIsLive(true);
+      } else {
+        setIsLive(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-  // Top-level pods only (no sub-pods)
+  const mockOrgStats = useMemo(() => getMockOrgStats(), []);
+  const orgStats = isLive && liveData ? {
+    totalSellers: liveData.totalSellers,
+    activeThisWeek: liveData.activeThisWeek,
+    totalSessionsThisWeek: liveData.totalSessions,
+    avgPerSeller: liveData.avgPerSeller,
+    mostActivePod: PODS.find(p => p.id === liveData.mostActivePodId)?.name || '—',
+    trendingModule: liveData.trendingModule,
+  } : mockOrgStats;
+  const chartData = isLive && liveData ? liveData.activityChart : getMockActivityChart(14);
+  const moduleData = isLive && liveData ? liveData.moduleBreakdown.map(m => ({
+    module: m.module,
+    label: m.module,
+    percentage: m.percentage,
+  })) : getMockModuleBreakdown();
+
+  // Top-level pods: real data if available, mock otherwise
   const topLevelPods = useMemo(() => {
     return PODS
       .filter(p => !p.parentPodId && p.id !== 'executive_team')
@@ -432,6 +462,33 @@ export default function ExecutiveDashboard({ profile, onPodClick, onSellerClick,
         <ActivityChart data={chartData} />
         <ModuleAdoption data={moduleData} />
       </div>
+
+      {/* Training Gaps / Topics across org (aggregated — no attribution) */}
+      {isLive && liveData?.topTopics?.length > 0 && (
+        <div style={{ marginTop: 24, padding: '20px 24px', background: G.white, border: `1px solid ${G.border}`, borderRadius: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: G.dark, margin: 0 }}>Training Gaps — What Sellers Are Asking About</h3>
+            <span style={{ fontSize: 10, color: G.muted, fontStyle: 'italic' }}>Aggregated across all pods</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+            {liveData.topTopics.map(t => {
+              const label = TOPIC_LABELS[t.topic] || t.topic;
+              return (
+                <div key={t.topic} style={{ padding: '12px 14px', background: G.bg, border: `1px solid ${G.borderLight}`, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: G.text }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: G.teal }}>{t.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!isLive && (
+        <div style={{ marginTop: 16, padding: '10px 14px', background: '#FDF8EC', border: `1px solid #E8D49C`, borderRadius: 8, fontSize: 12, color: G.text }}>
+          Showing sample data. Real usage will appear here once sellers start using the platform.
+        </div>
+      )}
 
       {/* Engagement Leaderboard */}
       <EngagementLeaderboard onSellerClick={onSellerClick} />

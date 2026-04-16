@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { G } from '../constants/colors.js';
 import { PODS } from '../data/userSeed.js';
 import { getMockPodStats, getMockActivityChart, MODULE_LABELS, MODULE_COLORS } from '../data/mockDashboardData.js';
+import { getPodDashboardData, TOPIC_LABELS } from '../lib/dashboardQueries.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -345,8 +346,39 @@ export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick,
 
   // Determine the leader's own pod
   const ownPodId = profile?.pod_id || (profile?.manages && profile.manages[0]) || '';
-  const podStats = useMemo(() => getMockPodStats(ownPodId), [ownPodId]);
-  const chartData = useMemo(() => getMockActivityChart(14), []);
+
+  // Try to fetch real Supabase data; fall back to mock when empty or unavailable
+  const [liveData, setLiveData] = useState(null);
+  const [isLive, setIsLive] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    getPodDashboardData(visiblePodIds || [ownPodId]).then(result => {
+      if (cancelled) return;
+      if (result.source === 'supabase' && result.data && result.data.totalSessions > 0) {
+        setLiveData(result.data);
+        setIsLive(true);
+      } else {
+        setIsLive(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [ownPodId, visiblePodIds]);
+
+  // Derive pod display: real if we have data, otherwise mock
+  const mockPodStats = useMemo(() => getMockPodStats(ownPodId), [ownPodId]);
+  const podStats = isLive && liveData ? {
+    podName: mockPodStats?.podName || PODS.find(p => p.id === ownPodId)?.name || 'Pod',
+    leaderName: mockPodStats?.leaderName || profile?.full_name || 'Leader',
+    memberCount: liveData.memberCount,
+    activeThisWeek: liveData.activeThisWeek,
+    totalSessions: liveData.totalSessions,
+    avgPerMember: liveData.avgPerMember,
+    topModule: liveData.topModule,
+    members: liveData.members,
+    topTopics: liveData.topTopics,
+  } : mockPodStats;
+
+  const chartData = isLive && liveData ? liveData.activityChart : getMockActivityChart(14);
 
   // Sub-pods: any visible pod that isn't the leader's own
   const subPodIds = useMemo(() => {
@@ -442,6 +474,33 @@ export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick,
       <div style={{ marginBottom: 24 }}>
         <TeamTable rows={podStats.members} onSellerClick={onSellerClick} />
       </div>
+
+      {/* What your pod is asking about (topic buckets — no individual attribution) */}
+      {podStats.topTopics && podStats.topTopics.length > 0 && (
+        <div style={{ marginTop: 24, padding: '20px 24px', background: G.white, border: `1px solid ${G.border}`, borderRadius: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: G.dark, margin: 0 }}>What your pod is asking about</h3>
+            <span style={{ fontSize: 10, color: G.muted, fontStyle: 'italic' }}>Aggregated — individual questions are private</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {podStats.topTopics.map(t => {
+              const label = TOPIC_LABELS[t.topic] || t.topic;
+              return (
+                <div key={t.topic} style={{ padding: '10px 14px', background: G.bg, border: `1px solid ${G.borderLight}`, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: G.text }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: G.teal }}>{t.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!isLive && (
+        <div style={{ marginTop: 16, padding: '10px 14px', background: '#FDF8EC', border: `1px solid #E8D49C`, borderRadius: 8, fontSize: 12, color: G.text }}>
+          Showing sample data. Real usage will appear here once your pod starts using the platform.
+        </div>
+      )}
 
       {/* Sub-Pods (if leader has visibility into child pods) */}
       {subPodIds.length > 0 && (
