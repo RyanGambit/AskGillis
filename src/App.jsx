@@ -1653,7 +1653,15 @@ export default function App() {
                 setSelectedBrand(slug);
               }}
               onBack={() => setSelectedBrand(null)}
-              onAskTammy={() => setChatOpen(true)}
+              onAskTammy={() => {
+                // Clear conversation so user sees brand-specific starter prompts
+                if (messages.length >= 2) saveSession();
+                setMessages([]);
+                convRef.current = [];
+                sessionStartRef.current = null;
+                setChatOpen(true);
+                setTimeout(() => inputRef.current?.focus(), 200);
+              }}
             />
           )}
 
