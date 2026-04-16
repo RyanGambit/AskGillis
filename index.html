@@ -26,6 +26,12 @@
       button { touch-action: manipulation; }
       /* Prevent pull-to-refresh breaking chat scroll */
       @supports (height: 100dvh) { html, body { height: 100dvh; } }
+      /* iOS: prevent auto-zoom on input focus (applies only to narrow viewports so desktop text sizing stays tight) */
+      @media (max-width: 767px) {
+        input, textarea, select {
+          font-size: 16px !important;
+        }
+      }
     </style>
   </head>
   <body>

@@ -1434,8 +1434,8 @@ export default function App() {
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
         <div style={{padding:isMobile?"10px 14px":"14px 28px",borderBottom:"none",background:G.white,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            {isCompact && <button onClick={() => setSidebarOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",color:G.dark}}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            {isCompact && <button onClick={() => setSidebarOpen(true)} aria-label="Open menu" style={{background:"none",border:"none",cursor:"pointer",padding:10,margin:-6,display:"flex",alignItems:"center",color:G.dark,borderRadius:8}}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>}
             {!isCompact && (mode === "seller" || activeModule === "help") && <NavIcon path={mod.icon} color={mod.color} size={18}/>}
             <span style={{fontSize:isMobile?14:15,fontWeight:600}}>{activeModule === "help" ? "Help & FAQ" : mode === "manager" ? (selectedUser ? selectedUser : mgrView === "kb" ? "Knowledge Base" : mgrView === "patterns" ? "Patterns & Topics" : "Team Overview") : mod.label}</span>
@@ -2021,7 +2021,7 @@ export default function App() {
 
       {/* MOBILE FLOATING TAMMY BUTTON */}
       {isMobile && !chatOpen && (
-        <button onClick={() => setChatOpen(true)} style={{position:"fixed",bottom:20,right:16,width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,border:"none",boxShadow:"0 4px 16px rgba(26,187,166,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:80}}>
+        <button onClick={() => setChatOpen(true)} aria-label="Open chat with Tammy" style={{position:"fixed",bottom:`max(20px, env(safe-area-inset-bottom))`,right:16,width:56,height:56,borderRadius:"50%",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,border:"none",boxShadow:"0 4px 16px rgba(26,187,166,0.4)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:80}}>
           <TammyAvatar size={32}/>
         </button>
       )}

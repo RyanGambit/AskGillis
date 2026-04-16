@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { G } from '../constants/colors.js';
 import { USERS, PODS } from '../data/userSeed.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -241,12 +242,13 @@ function PodsTable() {
 export default function AdminPanel({ profile }) {
   const [activeTab, setActiveTab] = useState('Users');
   const [sortField, setSortField] = useState('role');
+  const isMobile = useIsMobile();
 
   // Show only active users (role !== 'none')
   const activeUsers = useMemo(() => USERS.filter(u => u.role !== 'none'), []);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto', fontFamily: 'inherit' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '24px 32px', maxWidth: 1100, margin: '0 auto', fontFamily: 'inherit' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: G.dark, margin: 0 }}>

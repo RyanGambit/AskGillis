@@ -99,10 +99,12 @@ export default function DevModeSwitcher() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 16,
+      bottom: `max(16px, env(safe-area-inset-bottom))`,
       right: 16,
+      left: 'auto',
       zIndex: 9999,
       width: 280,
+      maxWidth: 'calc(100vw - 32px)',
       background: G.white,
       border: `2px solid ${YELLOW}`,
       borderRadius: 12,

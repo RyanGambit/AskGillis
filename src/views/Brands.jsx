@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { G } from '../constants/colors.js';
 import { CROSS_BRAND_DOCS, BRANDS } from '../data/brandsData.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 // Brand visual accents — used for card borders and detail page headers
 const BRAND_ACCENTS = {
@@ -76,18 +77,19 @@ function DocCard({ doc, accentColor }) {
 }
 
 function BrandLanding({ onSelectBrand }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{maxWidth: 1100, margin: '0 auto'}}>
       {/* Header */}
-      <div style={{marginBottom: 28}}>
-        <h2 style={{fontSize: 22, fontWeight: 700, color: G.dark, margin: 0, marginBottom: 4}}>Hotel Brands</h2>
-        <p style={{fontSize: 14, color: G.muted, margin: 0}}>Brand-specific reference materials. Tap a brand to browse its resources and chat with Tammy with that brand's context loaded.</p>
+      <div style={{marginBottom: isMobile ? 20 : 28}}>
+        <h2 style={{fontSize: isMobile ? 19 : 22, fontWeight: 700, color: G.dark, margin: 0, marginBottom: 4}}>Hotel Brands</h2>
+        <p style={{fontSize: isMobile ? 13 : 14, color: G.muted, margin: 0, lineHeight: 1.5}}>Brand-specific reference materials. Tap a brand to browse its resources and chat with Tammy with that brand's context loaded.</p>
       </div>
 
       {/* Cross-brand section */}
-      <div style={{marginBottom: 36}}>
+      <div style={{marginBottom: isMobile ? 24 : 36}}>
         <div style={{fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: G.muted, marginBottom: 12}}>Cross-Brand References</div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10}}>
+        <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10}}>
           {CROSS_BRAND_DOCS.map(d => <DocCard key={d.filename} doc={d} accentColor={G.purple}/>)}
         </div>
       </div>
@@ -95,7 +97,7 @@ function BrandLanding({ onSelectBrand }) {
       {/* Brand grid */}
       <div>
         <div style={{fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: G.muted, marginBottom: 12}}>Brand Families</div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14}}>
+        <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: isMobile ? 10 : 14}}>
           {BRANDS.map(brand => {
             const accent = BRAND_ACCENTS[brand.slug] || { color: G.purple, bg: G.purpleLight };
             return (
@@ -147,6 +149,7 @@ function BrandDetail({ brand, onBack, onAskTammy }) {
   const accent = BRAND_ACCENTS[brand.slug] || { color: G.purple, bg: G.purpleLight };
   const sharepointUrl = SHAREPOINT_URLS[brand.slug];
   const [filter, setFilter] = useState('');
+  const isMobile = useIsMobile();
 
   const filteredDocs = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -170,23 +173,24 @@ function BrandDetail({ brand, onBack, onAskTammy }) {
 
       {/* Brand header */}
       <div style={{
-        padding: '24px 28px',
+        padding: isMobile ? '18px 18px' : '24px 28px',
         borderRadius: 14,
         background: accent.bg,
         border: `1px solid ${accent.color}22`,
-        marginBottom: 24,
+        marginBottom: isMobile ? 16 : 24,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
         justifyContent: 'space-between',
-        gap: 20,
-        flexWrap: 'wrap',
+        gap: isMobile ? 14 : 20,
+        flexDirection: isMobile ? 'column' : 'row',
       }}>
         <div>
-          <h2 style={{fontSize: 26, fontWeight: 700, color: accent.color, margin: 0, marginBottom: 6}}>{brand.name}</h2>
-          <p style={{fontSize: 14, color: G.text, margin: 0, maxWidth: 600}}>{brand.description}</p>
+          <h2 style={{fontSize: isMobile ? 22 : 26, fontWeight: 700, color: accent.color, margin: 0, marginBottom: 6}}>{brand.name}</h2>
+          <p style={{fontSize: isMobile ? 13 : 14, color: G.text, margin: 0, maxWidth: 600, lineHeight: 1.5}}>{brand.description}</p>
         </div>
         <button onClick={() => onAskTammy(brand.name)} style={{
-          padding: '11px 20px',
+          padding: isMobile ? '14px 18px' : '11px 20px',
+          minHeight: 44,
           borderRadius: 10,
           border: 'none',
           background: `linear-gradient(135deg, ${G.purple}, ${G.lilac})`,
@@ -197,6 +201,7 @@ function BrandDetail({ brand, onBack, onAskTammy }) {
           fontFamily: 'inherit',
           whiteSpace: 'nowrap',
           boxShadow: '0 2px 10px rgba(61,43,107,0.25)',
+          width: isMobile ? '100%' : 'auto',
         }}>
           Ask Tammy about {brand.name} →
         </button>
@@ -255,7 +260,7 @@ function BrandDetail({ brand, onBack, onAskTammy }) {
       )}
 
       {/* Documents */}
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 10}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: 10}}>
         {filteredDocs.map(d => <DocCard key={d.filename} doc={d} accentColor={accent.color}/>)}
       </div>
 
