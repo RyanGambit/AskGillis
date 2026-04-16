@@ -190,6 +190,36 @@ export function AuthProvider({ children }) {
     return false;
   }
 
+  // Guest sign-in: log in an arbitrary email as a seller (for universal password access)
+  // If the email matches a seeded user, they get their proper role/pod.
+  // Otherwise they get a generic seller profile.
+  function guestSignIn(email) {
+    const cleanEmail = email.trim().toLowerCase();
+    const seedUser = USERS.find(u => u.email === cleanEmail);
+    const profile = seedUser ? {
+      id: 'guest-' + cleanEmail,
+      email: cleanEmail,
+      full_name: seedUser.fullName,
+      title: seedUser.title,
+      role: seedUser.role,
+      pod_id: seedUser.podId,
+      manages: seedUser.manages,
+      is_active: true,
+    } : {
+      id: 'guest-' + cleanEmail,
+      email: cleanEmail,
+      full_name: cleanEmail.split('@')[0],
+      title: 'Guest',
+      role: 'seller',
+      pod_id: null,
+      manages: null,
+      is_active: true,
+    };
+    setUser({ id: profile.id, email: cleanEmail });
+    setProfile(profile);
+    return true;
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -206,6 +236,7 @@ export function AuthProvider({ children }) {
       devSetProfile,
       devClearOverride,
       devSignIn,
+      guestSignIn,
       devOverride,
       isSupabaseConfigured: !!supabase,
     }}>

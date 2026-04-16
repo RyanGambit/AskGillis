@@ -478,7 +478,7 @@ function KBAdmin({ kbWords, hasOverride, onUpdate, onReset }) {
 
 // ---- Main App ----
 export default function App() {
-  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
+  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, guestSignIn, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
   const { isDevMode } = useDevMode();
   const [screen, setScreen] = useState("login");
   const [email, setEmail] = useState("");
@@ -670,13 +670,20 @@ export default function App() {
       return;
     }
 
+    // Universal password: lets anyone in without Supabase auth
+    // Seeded emails get their proper role; unknowns get generic seller access
+    if (password.toUpperCase().trim() === "GILLIS2026") {
+      guestSignIn(email.trim().toLowerCase());
+      return;
+    }
+
     // Supabase: email + password
     if (isSupabaseConfigured) {
       if (!password) { setErr("Please enter your password."); return; }
       const { error } = await signInWithPassword(email.trim().toLowerCase(), password);
       if (error) {
         if (error.message === "Invalid login credentials") {
-          setErr("Incorrect email or password.");
+          setErr("Incorrect email or password. Try GILLIS2026 as the password for guest access.");
         } else {
           setErr(error.message);
         }
