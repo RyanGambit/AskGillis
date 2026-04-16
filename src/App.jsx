@@ -1653,14 +1653,16 @@ export default function App() {
                 setSelectedBrand(slug);
               }}
               onBack={() => setSelectedBrand(null)}
-              onAskTammy={() => {
-                // Clear conversation so user sees brand-specific starter prompts
+              onAskTammy={(brandName) => {
+                // Clear conversation, open chat, and auto-send a starter question
                 if (messages.length >= 2) saveSession();
                 setMessages([]);
                 convRef.current = [];
                 sessionStartRef.current = null;
                 setChatOpen(true);
-                setTimeout(() => inputRef.current?.focus(), 200);
+                // Auto-send a starter question so user sees immediate Tammy response
+                const starter = `Give me an overview of ${brandName} — brand family, loyalty program, key systems I should know, and what makes selling for them different.`;
+                setTimeout(() => sendMessage(starter), 150);
               }}
             />
           )}

@@ -185,7 +185,7 @@ function BrandDetail({ brand, onBack, onAskTammy }) {
           <h2 style={{fontSize: 26, fontWeight: 700, color: accent.color, margin: 0, marginBottom: 6}}>{brand.name}</h2>
           <p style={{fontSize: 14, color: G.text, margin: 0, maxWidth: 600}}>{brand.description}</p>
         </div>
-        <button onClick={onAskTammy} style={{
+        <button onClick={() => onAskTammy(brand.name)} style={{
           padding: '11px 20px',
           borderRadius: 10,
           border: 'none',
