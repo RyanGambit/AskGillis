@@ -475,7 +475,7 @@ function KBAdmin({ kbWords, hasOverride, onUpdate, onReset }) {
 
 // ---- Main App ----
 export default function App() {
-  const { user, profile, loading: authLoading, signInWithMagicLink, signOut, devSignIn, isSupabaseConfigured, authError, visiblePodIds } = useAuth();
+  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
   const { isDevMode } = useDevMode();
   const [screen, setScreen] = useState("login");
   const [email, setEmail] = useState("");
@@ -643,24 +643,41 @@ export default function App() {
     }
   }, [screen]);
 
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [password, setPasswordVal] = useState("");
+  const [loginView, setLoginView] = useState("login"); // login | forgot | reset-sent | set-password
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Detect if user arrived via invite/reset link
+  useEffect(() => {
+    if (needsPasswordSetup && screen === "login") {
+      setLoginView("set-password");
+    }
+  }, [needsPasswordSetup, screen]);
 
   const handleLogin = async () => {
     if (!email.includes("@")) { setErr("Please enter a valid email."); return; }
     setErr("");
 
-    // Dev mode: instant login from seed data (no email needed)
+    // Dev mode: instant login from seed data
     if (isDevMode) {
       const success = devSignIn(email.trim().toLowerCase());
       if (!success) { setErr("Email not found in user directory. Check the address."); return; }
       return;
     }
 
-    // If Supabase is configured, use magic link
+    // Supabase: email + password
     if (isSupabaseConfigured) {
-      const { error } = await signInWithMagicLink(email.trim().toLowerCase());
-      if (error) { setErr(error.message); return; }
-      setMagicLinkSent(true);
+      if (!password) { setErr("Please enter your password."); return; }
+      const { error } = await signInWithPassword(email.trim().toLowerCase(), password);
+      if (error) {
+        if (error.message === "Invalid login credentials") {
+          setErr("Incorrect email or password.");
+        } else {
+          setErr(error.message);
+        }
+        return;
+      }
       return;
     }
 
@@ -671,6 +688,26 @@ export default function App() {
       setScreen("role-select");
       return;
     }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.includes("@")) { setErr("Please enter your email address first."); return; }
+    setErr("");
+    const { error } = await resetPassword(email.trim().toLowerCase());
+    if (error) { setErr(error.message); return; }
+    setLoginView("reset-sent");
+  };
+
+  const handleSetPassword = async () => {
+    if (!newPassword) { setErr("Please enter a password."); return; }
+    if (newPassword.length < 6) { setErr("Password must be at least 6 characters."); return; }
+    if (newPassword !== confirmPassword) { setErr("Passwords don't match."); return; }
+    setErr("");
+    const { error } = await setPassword(newPassword);
+    if (error) { setErr(error.message); return; }
+    setNewPassword("");
+    setConfirmPassword("");
+    // Auth state change will auto-navigate to platform
   };
 
   const selectRole = (role) => {
@@ -950,35 +987,90 @@ export default function App() {
             </div>
             <div className={loginPhase>=2?"login-anim login-d3":"login-anim"} style={{opacity:0,transform:"translateY(20px)"}}>
               <div style={{background:"rgba(15,12,25,0.88)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"32px 28px",textAlign:"left"}}>
-                {magicLinkSent ? (
+                {loginView === "set-password" ? (
+                  <>
+                    <p style={{color:"rgba(255,255,255,0.9)",fontSize:16,fontWeight:600,marginBottom:4,marginTop:0}}>Set your password</p>
+                    <p style={{color:"rgba(255,255,255,0.5)",fontSize:13,marginBottom:20,marginTop:0}}>Choose a password to complete your account setup.</p>
+                    <div style={{marginBottom:14}}>
+                      <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>New Password</label>
+                      <input type="password" value={newPassword} onChange={e => {setNewPassword(e.target.value);setErr("");}} placeholder="At least 6 characters"
+                        onKeyDown={e => {if(e.key==="Enter" && confirmPassword)handleSetPassword();}}
+                        style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                    </div>
+                    <div style={{marginBottom:20}}>
+                      <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Confirm Password</label>
+                      <input type="password" value={confirmPassword} onChange={e => {setConfirmPassword(e.target.value);setErr("");}} placeholder="Confirm your password"
+                        onKeyDown={e => {if(e.key==="Enter")handleSetPassword();}}
+                        style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                    </div>
+                    {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:12}}>{err}</p>}
+                    <button onClick={handleSetPassword} style={{width:"100%",padding:"15px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 24px rgba(26,187,166,0.25)",transition:"transform 0.15s, box-shadow 0.15s"}}
+                      onMouseEnter={e => {e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 30px rgba(26,187,166,0.35)";}}
+                      onMouseLeave={e => {e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 24px rgba(26,187,166,0.25)";}}>
+                      Set Password & Continue
+                    </button>
+                  </>
+                ) : loginView === "forgot" ? (
+                  <>
+                    <p style={{color:"rgba(255,255,255,0.9)",fontSize:16,fontWeight:600,marginBottom:4,marginTop:0}}>Reset your password</p>
+                    <p style={{color:"rgba(255,255,255,0.5)",fontSize:13,marginBottom:20,marginTop:0}}>Enter your email and we'll send you a reset link.</p>
+                    <div style={{marginBottom:20}}>
+                      <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Email</label>
+                      <input type="email" value={email} onChange={e => {setEmail(e.target.value);setErr("");}} placeholder="you@gillissales.com"
+                        onKeyDown={e => {if(e.key==="Enter")handleForgotPassword();}}
+                        style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                    </div>
+                    {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:12}}>{err}</p>}
+                    <button onClick={handleForgotPassword} style={{width:"100%",padding:"15px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 24px rgba(26,187,166,0.25)",transition:"transform 0.15s, box-shadow 0.15s"}}
+                      onMouseEnter={e => {e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 30px rgba(26,187,166,0.35)";}}
+                      onMouseLeave={e => {e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 24px rgba(26,187,166,0.25)";}}>
+                      Send Reset Link
+                    </button>
+                    <div style={{textAlign:"center",marginTop:16}}>
+                      <button onClick={() => {setLoginView("login");setErr("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:13,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>Back to sign in</button>
+                    </div>
+                  </>
+                ) : loginView === "reset-sent" ? (
                   <div style={{textAlign:"center",padding:"16px 0"}}>
                     <div style={{fontSize:28,marginBottom:12}}>&#x2709;</div>
                     <p style={{color:"rgba(255,255,255,0.9)",fontSize:16,fontWeight:600,marginBottom:8}}>Check your email</p>
-                    <p style={{color:"rgba(255,255,255,0.6)",fontSize:14,marginBottom:20,lineHeight:1.5}}>We sent a login link to <strong style={{color:"rgba(255,255,255,0.85)"}}>{email}</strong>. Click the link in your email to sign in.</p>
-                    <button onClick={() => {setMagicLinkSent(false);setEmail("");}} style={{padding:"10px 20px",borderRadius:8,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"rgba(255,255,255,0.7)",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Try a different email</button>
+                    <p style={{color:"rgba(255,255,255,0.6)",fontSize:14,marginBottom:20,lineHeight:1.5}}>We sent a password reset link to <strong style={{color:"rgba(255,255,255,0.85)"}}>{email}</strong>.</p>
+                    <button onClick={() => {setLoginView("login");setErr("");}} style={{padding:"10px 20px",borderRadius:8,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"rgba(255,255,255,0.7)",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Back to sign in</button>
                   </div>
                 ) : (
                   <>
-                    <div style={{marginBottom:18}}>
+                    <div style={{marginBottom:14}}>
                       <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Email</label>
                       <input type="email" value={email} onChange={e => {setEmail(e.target.value);setErr("");}} placeholder="you@gillissales.com"
-                        onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
+                        onKeyDown={e => {if(e.key==="Enter" && password)handleLogin(); else if(e.key==="Enter")document.getElementById("ag-pw")?.focus();}}
                         style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
                     </div>
-                    {!isSupabaseConfigured && (
-                      <div style={{marginBottom:24}}>
+                    {isSupabaseConfigured ? (
+                      <div style={{marginBottom:20}}>
+                        <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Password</label>
+                        <input id="ag-pw" type="password" value={password} onChange={e => {setPasswordVal(e.target.value);setErr("");}} placeholder="Enter your password"
+                          onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
+                          style={{width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${err?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.18)"}`,background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
+                      </div>
+                    ) : (
+                      <div style={{marginBottom:20}}>
                         <label style={{display:"block",fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)",marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Invitation Code</label>
                         <input type="text" autoComplete="off" value={code} onChange={e => {setCode(e.target.value);setErr("");}} placeholder="Enter your code"
                           onKeyDown={e => {if(e.key==="Enter")handleLogin();}}
                           style={{width:"100%",padding:"14px 16px",borderRadius:10,border:`1px solid ${err?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.18)"}`,background:"rgba(255,255,255,0.1)",color:"white",fontSize:15,fontWeight:500,outline:"none",boxSizing:"border-box",fontFamily:"inherit",transition:"background 0.2s, border-color 0.2s"}}/>
                       </div>
                     )}
-                    {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:0}}>{err}</p>}
-                    <button onClick={handleLogin} style={{width:"100%",padding:"15px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 24px rgba(26,187,166,0.25)",transition:"transform 0.15s, box-shadow 0.15s",marginTop:isSupabaseConfigured?24:0}}
+                    {err && <p style={{color:"#ff7b7b",fontSize:12,marginTop:6,marginBottom:12}}>{err}</p>}
+                    <button onClick={handleLogin} style={{width:"100%",padding:"15px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${G.teal},${G.tealDark})`,color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 24px rgba(26,187,166,0.25)",transition:"transform 0.15s, box-shadow 0.15s"}}
                       onMouseEnter={e => {e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 6px 30px rgba(26,187,166,0.35)";}}
                       onMouseLeave={e => {e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 24px rgba(26,187,166,0.25)";}}>
-                      {isSupabaseConfigured ? "Send Login Link" : "Get Started"}
+                      Sign In
                     </button>
+                    {isSupabaseConfigured && (
+                      <div style={{textAlign:"center",marginTop:14}}>
+                        <button onClick={() => {setLoginView("forgot");setErr("");}} style={{background:"none",border:"none",color:"rgba(255,255,255,0.45)",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Forgot password?</button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

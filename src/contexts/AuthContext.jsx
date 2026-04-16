@@ -11,18 +11,16 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);        // Supabase auth user
-  const [profile, setProfile] = useState(null);   // profiles table row
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState('');
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false);
 
   // Dev mode: override profile for testing
   const [devOverride, setDevOverride] = useState(null);
-
-  // The effective profile (real or dev-overridden)
   const effectiveProfile = devOverride || profile;
 
-  // Compute visible pods for the effective profile
   const visiblePodIds = effectiveProfile
     ? effectiveProfile.role === 'executive'
       ? PODS.map(p => p.id)
@@ -31,22 +29,30 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!supabase) {
-      // No Supabase configured - use dev mode with local seed data
       setLoading(false);
       return;
     }
 
-    // Check current session
+    // Check for invite/recovery tokens in the URL hash
+    // Supabase redirects with #access_token=...&type=invite or type=recovery
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=invite') || hash.includes('type=recovery'))) {
+      setNeedsPasswordSetup(true);
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
       else setLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
+      if (event === 'PASSWORD_RECOVERY') {
+        // User clicked a password reset link
+        setNeedsPasswordSetup(true);
+        setLoading(false);
+      } else if (session?.user) {
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
@@ -67,7 +73,6 @@ export function AuthProvider({ children }) {
 
     if (error) {
       console.error('Failed to fetch profile:', error);
-      // Profile might not exist yet if trigger failed — try to create from seed data
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser?.email) {
         const seedUser = USERS.find(u => u.email === authUser.email.toLowerCase());
@@ -99,17 +104,36 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }
 
-  async function signInWithMagicLink(email) {
-    if (!supabase) {
-      setAuthError('Supabase not configured');
-      return { error: { message: 'Supabase not configured' } };
-    }
+  // Email + password sign in
+  async function signInWithPassword(email, password) {
+    if (!supabase) return { error: { message: 'Supabase not configured' } };
     setAuthError('');
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setAuthError(error.message);
+    return { error };
+  }
+
+  // Set or update password (used on first login via invite, or password reset)
+  async function setPassword(password) {
+    if (!supabase) return { error: { message: 'Supabase not configured' } };
+    setAuthError('');
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setNeedsPasswordSetup(false);
+      // Clear the hash from the URL
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    return { error };
+  }
+
+  // Send password reset email
+  async function resetPassword(email) {
+    if (!supabase) return { error: { message: 'Supabase not configured' } };
+    setAuthError('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
     });
     if (error) setAuthError(error.message);
     return { error };
@@ -118,6 +142,7 @@ export function AuthProvider({ children }) {
   async function signOut() {
     if (!supabase) return;
     setDevOverride(null);
+    setNeedsPasswordSetup(false);
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
@@ -173,7 +198,10 @@ export function AuthProvider({ children }) {
       loading,
       authError,
       visiblePodIds,
-      signInWithMagicLink,
+      needsPasswordSetup,
+      signInWithPassword,
+      setPassword,
+      resetPassword,
       signOut,
       devSetProfile,
       devClearOverride,
