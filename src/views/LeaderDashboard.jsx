@@ -3,6 +3,7 @@ import { G } from '../constants/colors.js';
 import { PODS } from '../data/userSeed.js';
 import { getMockPodStats, getMockActivityChart, MODULE_LABELS, MODULE_COLORS } from '../data/mockDashboardData.js';
 import { getPodDashboardData, TOPIC_LABELS } from '../lib/dashboardQueries.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,7 +126,52 @@ function ActivityChart({ data, maxHeight = 120 }) {
   );
 }
 
-function TeamTable({ rows, onSellerClick }) {
+function TeamTable({ rows, onSellerClick, isMobile }) {
+  // Mobile: render as card list instead of table
+  if (isMobile) {
+    return (
+      <div style={{ background: G.white, borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: `1px solid ${G.borderLight}`, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 16px 10px', fontSize: 14, fontWeight: 700, color: G.dark }}>Team Members</div>
+        {rows.map(row => (
+          <div
+            key={row.email}
+            onClick={() => onSellerClick && onSellerClick(row.email)}
+            style={{
+              padding: '12px 16px',
+              borderTop: `1px solid ${G.borderLight}`,
+              cursor: onSellerClick ? 'pointer' : 'default',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <span style={{
+              display: 'inline-block',
+              width: 10, height: 10,
+              borderRadius: '50%',
+              background: ENGAGEMENT_DOT[row.engagementLevel] || ENGAGEMENT_DOT.low,
+              flexShrink: 0,
+            }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: G.dark, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.fullName}</div>
+              <div style={{ fontSize: 11, color: G.muted, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <span>{relativeTimeLabel(row.lastActive)}</span>
+                <span>·</span>
+                <span><strong style={{color: G.dark}}>{row.sessionsThisWeek}</strong> sessions</span>
+                {row.topModule && <>
+                  <span>·</span>
+                  <span style={{color: MODULE_COLORS[row.topModule] || G.muted, fontWeight: 600}}>{row.topModuleLabel || MODULE_LABELS[row.topModule] || row.topModule}</span>
+                </>}
+              </div>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && (
+          <div style={{ padding: 24, textAlign: 'center', color: G.muted, fontSize: 13, borderTop: `1px solid ${G.borderLight}` }}>No team members found</div>
+        )}
+      </div>
+    );
+  }
   return (
     <div style={{
       background: G.white,
@@ -343,6 +389,7 @@ function SubPodSection({ subPodIds, onSellerClick }) {
 
 export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick, onSwitchToSeller }) {
   const [timeRange, setTimeRange] = useState('This Week');
+  const isMobile = useIsMobile();
 
   // Determine the leader's own pod
   const ownPodId = profile?.pod_id || (profile?.manages && profile.manages[0]) || '';
@@ -395,12 +442,12 @@ export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick,
   }
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto', fontFamily: 'inherit' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '24px 32px', maxWidth: 1100, margin: '0 auto', fontFamily: 'inherit' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: G.dark, margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <h1 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: G.dark, margin: 0 }}>
               {podStats.podName}
             </h1>
             <span style={{
@@ -416,7 +463,7 @@ export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick,
           </div>
           <div style={{ fontSize: 13, color: G.muted, marginTop: 4 }}>Your Pod</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <TimeRangeToggle selected={timeRange} onChange={setTimeRange} />
           {onSwitchToSeller && (
             <button
@@ -472,7 +519,7 @@ export default function LeaderDashboard({ profile, visiblePodIds, onSellerClick,
 
       {/* Team Table */}
       <div style={{ marginBottom: 24 }}>
-        <TeamTable rows={podStats.members} onSellerClick={onSellerClick} />
+        <TeamTable rows={podStats.members} onSellerClick={onSellerClick} isMobile={isMobile} />
       </div>
 
       {/* What your pod is asking about (topic buckets — no individual attribution) */}

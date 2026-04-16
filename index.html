@@ -2,18 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#3D2B6B" />
     <title>AskGillis</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       * { box-sizing: border-box; margin: 0; }
-      body { margin: 0; font-family: 'DM Sans', system-ui, sans-serif; }
+      html, body { margin: 0; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+      body { font-family: 'DM Sans', system-ui, sans-serif; }
       ::-webkit-scrollbar { width: 4px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #d8d4e2; border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: #b5b0c0; }
       textarea::placeholder, input::placeholder { color: #b5b0c0; }
+      /* iOS: smooth momentum scrolling on all scroll containers */
+      div[style*="overflow-y:auto"], div[style*="overflow:auto"], div[style*="overflowY:\"auto\""] {
+        -webkit-overflow-scrolling: touch;
+      }
+      /* iOS: prevent double-tap zoom on buttons */
+      button { touch-action: manipulation; }
+      /* Prevent pull-to-refresh breaking chat scroll */
+      @supports (height: 100dvh) { html, body { height: 100dvh; } }
     </style>
   </head>
   <body>

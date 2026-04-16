@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { G } from '../constants/colors.js';
 import { USERS, PODS } from '../data/userSeed.js';
 import { getOrgDashboardData, TOPIC_LABELS } from '../lib/dashboardQueries.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 import {
   getMockOrgStats,
   getMockPodStats,
@@ -342,6 +343,7 @@ function EngagementLeaderboard({ onSellerClick }) {
 
 export default function ExecutiveDashboard({ profile, onPodClick, onSellerClick, onSwitchToSeller }) {
   const [timeRange, setTimeRange] = useState('This Week');
+  const isMobile = useIsMobile();
 
   // Try real Supabase data first
   const [liveData, setLiveData] = useState(null);
@@ -387,18 +389,18 @@ export default function ExecutiveDashboard({ profile, onPodClick, onSellerClick,
   const totalUsers = USERS.filter(u => u.role !== 'none').length;
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1200, margin: '0 auto', fontFamily: 'inherit' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '24px 32px', maxWidth: 1200, margin: '0 auto', fontFamily: 'inherit' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', marginBottom: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: G.dark, margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: G.dark, margin: 0 }}>
             Gillis Sales Organization
           </h1>
           <div style={{ fontSize: 13, color: G.muted, marginTop: 4 }}>
             {totalUsers} active users across {PODS.length} pods
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <TimeRangeToggle selected={timeRange} onChange={setTimeRange} />
           {onSwitchToSeller && (
             <button

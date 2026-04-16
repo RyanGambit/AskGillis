@@ -1217,23 +1217,25 @@ export default function App() {
 
     return (
       <div style={{display:"flex",flexDirection:"column",height:"100dvh",background:G.bg,color:G.dark,fontFamily:"inherit"}}>
-        {/* Header */}
-        <div style={{padding:"14px 20px",background:G.white,borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:28,filter:"invert(15%) sepia(30%) saturate(1500%) hue-rotate(245deg) brightness(0.4)"}}/>
+        {/* Header — shrinks on mobile, respects safe area */}
+        <div style={{padding:isMobile?"10px 14px":"14px 20px",paddingTop:`calc(${isMobile?10:14}px + env(safe-area-inset-top))`,background:G.white,borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:isMobile?22:28,filter:"invert(15%) sepia(30%) saturate(1500%) hue-rotate(245deg) brightness(0.4)"}}/>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:isMobile?4:8,flexShrink:0}}>
             <button onClick={exitStandalone}
-              style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}
+              style={{padding:isMobile?"8px 10px":"7px 14px",minHeight:40,borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}
               onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
               onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.text;}}>
-              ← Back to Training
+              <span>←</span>
+              <span style={{display:isMobile?"none":"inline"}}>Back to Training</span>
+              <span style={{display:isMobile?"inline":"none"}}>Back</span>
             </button>
             <button onClick={() => { signOut(); setScreen("login"); setStandaloneMode(false); }}
-              style={{padding:"7px 12px",borderRadius:8,border:"none",background:"transparent",color:G.muted,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}
+              style={{padding:isMobile?"8px 10px":"7px 12px",minHeight:40,borderRadius:8,border:"none",background:"transparent",color:G.muted,fontSize:12,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}
               onMouseEnter={e => e.currentTarget.style.color=G.dark}
               onMouseLeave={e => e.currentTarget.style.color=G.muted}>
-              Sign out
+              {isMobile ? "Exit" : "Sign out"}
             </button>
           </div>
         </div>
@@ -1281,12 +1283,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* New conversation + input */}
-        <div style={{background:G.white,borderTop:`1px solid ${G.border}`,padding:"12px 20px",flexShrink:0,boxShadow:"0 -1px 3px rgba(0,0,0,0.03)"}}>
+        {/* New conversation + input — respects iPhone home indicator safe area */}
+        <div style={{background:G.white,borderTop:`1px solid ${G.border}`,padding:isMobile?"10px 14px":"12px 20px",paddingBottom:`calc(${isMobile?10:12}px + env(safe-area-inset-bottom))`,flexShrink:0,boxShadow:"0 -1px 3px rgba(0,0,0,0.03)"}}>
           <div style={{width:"100%",maxWidth:720,margin:"0 auto"}}>
             {messages.length > 0 && (
               <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;setTimeout(()=>inputRef.current?.focus(),100);}}
-                style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:8,border:`1px solid ${G.border}`,background:G.bg,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+                style={{width:"100%",padding:"10px",marginBottom:8,minHeight:38,borderRadius:8,border:`1px solid ${G.border}`,background:G.bg,color:G.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
                 onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
                 onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1297,13 +1299,13 @@ export default function App() {
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}}
                 placeholder="Ask Tammy anything..." rows={1} autoFocus
-                style={{flex:1,resize:"none",border:"none",background:"transparent",color:G.dark,fontSize:14,fontFamily:"inherit",outline:"none",padding:"10px 0",lineHeight:1.4,maxHeight:120}}/>
-              <button onClick={() => sendMessage()} disabled={!input.trim()||loading}
-                style={{width:36,height:36,borderRadius:9,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:16,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.15s"}}>
+                style={{flex:1,resize:"none",border:"none",background:"transparent",color:G.dark,fontSize:16,fontFamily:"inherit",outline:"none",padding:"10px 0",lineHeight:1.4,maxHeight:120}}/>
+              <button onClick={() => sendMessage()} disabled={!input.trim()||loading} aria-label="Send message"
+                style={{width:44,height:44,borderRadius:10,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:18,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.15s"}}>
                 &#8593;
               </button>
             </div>
-            <div style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8,letterSpacing:"0.02em"}}>AskGillis — powered by Tammy's 28 years of hospitality sales</div>
+            {!isMobile && <div style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8,letterSpacing:"0.02em"}}>AskGillis — powered by Tammy's 28 years of hospitality sales</div>}
           </div>
         </div>
 
@@ -2002,14 +2004,14 @@ export default function App() {
               </button>
             </div>
           )}
-          <div style={{padding:"10px 12px",borderTop:messages.length>0?"none":`1px solid ${G.border}`,flexShrink:0}}>
+          <div style={{padding:"10px 12px",paddingBottom:isCompact?`calc(10px + env(safe-area-inset-bottom))`:"10px",borderTop:messages.length>0?"none":`1px solid ${G.border}`,flexShrink:0}}>
             <div style={{display:"flex",gap:8,alignItems:"flex-end",background:G.bg,border:`1px solid ${G.border}`,borderRadius:10,padding:"4px 4px 4px 12px"}}>
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}}
                 placeholder="Ask Tammy..." rows={1}
-                style={{flex:1,resize:"none",border:"none",background:"transparent",color:G.dark,fontSize:12.5,fontFamily:"inherit",outline:"none",padding:"8px 0",lineHeight:1.4,maxHeight:80}}/>
-              <button onClick={() => sendMessage()} disabled={!input.trim()||loading}
-                style={{width:30,height:30,borderRadius:8,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:13,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                style={{flex:1,resize:"none",border:"none",background:"transparent",color:G.dark,fontSize:isMobile?16:12.5,fontFamily:"inherit",outline:"none",padding:"8px 0",lineHeight:1.4,maxHeight:80}}/>
+              <button onClick={() => sendMessage()} disabled={!input.trim()||loading} aria-label="Send message"
+                style={{width:isMobile?38:30,height:isMobile?38:30,borderRadius:8,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:isMobile?15:13,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 &#8593;
               </button>
             </div>
