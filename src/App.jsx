@@ -1643,7 +1643,15 @@ export default function App() {
           {mode === "seller" && activeModule === "brands" && (
             <Brands
               selectedBrandSlug={selectedBrand}
-              onSelectBrand={(slug) => setSelectedBrand(slug)}
+              onSelectBrand={(slug) => {
+                if (selectedBrand !== slug) {
+                  if (messages.length >= 2) saveSession();
+                  setMessages([]);
+                  convRef.current = [];
+                  sessionStartRef.current = null;
+                }
+                setSelectedBrand(slug);
+              }}
               onBack={() => setSelectedBrand(null)}
               onAskTammy={() => setChatOpen(true)}
             />
@@ -1718,7 +1726,11 @@ export default function App() {
             <TammyAvatar size={30}/>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:600}}>Tammy</div>
-              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mode==="manager"?"#8B5CF6":mod.color}}>{mode==="manager"?"Coaching the Coach":("Coaching: "+mod.label)}</div>
+              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:mode==="manager"?"#8B5CF6":mod.color}}>{
+                mode==="manager" ? "Coaching the Coach" :
+                activeModule==="brands" && selectedBrand ? "Coaching: " + (BRANDS.find(b => b.slug === selectedBrand)?.name || "Brand") :
+                "Coaching: " + mod.label
+              }</div>
             </div>
             {messages.length > 0 && <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;}} title="New conversation" style={{background:"none",border:"none",cursor:"pointer",color:G.muted,padding:4,display:"flex",alignItems:"center"}}
               onMouseEnter={e => e.currentTarget.style.color=G.teal}
@@ -1753,6 +1765,14 @@ export default function App() {
                     :activeModule==="sharpener"?["Surprise me with a drill","Practice opening statements","Work on objection handling"]
                     :activeModule==="social"?["Fix my LinkedIn headline","Write a connection request","Help me write a post"]
                     :activeModule==="hub"?["Where do I submit expenses?","Tell me about the incentive plan","Who do I contact for help?"]
+                    :activeModule==="brands" && selectedBrand==="hilton"?["What's the difference between Hilton Garden Inn and Hampton?","Walk me through submitting a CARP","How do I pull a Merlin report?","How do I request access to a new property in the Lobby?"]
+                    :activeModule==="brands" && selectedBrand==="choice"?["What are the main Choice rate plans and when do I use each?","How do I submit a business case during April qualifying season?","Explain the Choice Privileges program","Who do I contact for a national account RFP at Choice?"]
+                    :activeModule==="brands" && selectedBrand==="ihg"?["What's the 2026 Corporate Transient RFP timeline?","Difference between IHG Business Edge and Business Rewards?","How do I activate a rate code in GRS?","Walk me through the IHG Way of Sales"]
+                    :activeModule==="brands" && selectedBrand==="marriott"?["What's a CBC and how do I request one?","Walk me through submitting a rate offer in RMAS","How do I search in HPP effectively?","What's Power of M replacing?"]
+                    :activeModule==="brands" && selectedBrand==="best-western"?["Explain Best Western Rewards (BWR)","What's the difference between BBW, BBSN, and BBRN rates?","How do I use the Sales Champion tool?","Walk me through BW's district structure"]
+                    :activeModule==="brands" && selectedBrand==="wyndham"?["How do I set up a Lead Catcher in Wyndham Community?","Walk me through prepping for RFP season","How do I load an LNR rate plan?","What reports should I pull from SynXis?"]
+                    :activeModule==="brands" && selectedBrand==="hyatt"?["Tell me about Hyatt Place's positioning","Explain World of Hyatt tiers","Who do I contact at Hyatt for support?"]
+                    :activeModule==="brands"?["Which brand has the best loyalty program for corporate travel?","What are the main GDS chain codes I need to know?","How do I find a company's Corporate ID for a specific brand?","Which portal do I use for which brand?"]
                     :activeModule==="help"?["How do I get started?","What module should I use?","Give me a quick tip"]
                     :["Explain the 4A model","When should I hunt vs farm?","What makes a good opening statement?"]
                   ).map((q,i) => (
