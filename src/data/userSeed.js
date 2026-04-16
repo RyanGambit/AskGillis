@@ -86,7 +86,8 @@ export const USERS = [
   { email: 'ngillespie@gillissales.com', fullName: 'Nicole Gillespie', title: 'People and Culture Specialist', role: 'seller', podId: 'executive_team', manages: null },
   { email: 'twilkinson@gillissales.com', fullName: 'Taylor Wilkinson', title: 'Talent Coordinator', role: 'seller', podId: 'executive_team', manages: null },
 
-  // Admin (3)
+  // Admin (4)
+  { email: 'ryan@gambitco.io', fullName: 'Ryan', title: 'Platform Developer', role: 'admin', podId: null, manages: null },
   { email: 'talmond@gillissales.com', fullName: 'Tysha Almond', title: 'Business Analyst, Operations', role: 'admin', podId: null, manages: null },
   { email: 'kemmons@gillissales.com', fullName: 'Kevin Emmons', title: 'Salesforce Administrator', role: 'admin', podId: null, manages: null },
   { email: 'achristy@gillissales.com', fullName: 'Alissa Christy', title: 'Manager, New Client Implementation', role: 'admin', podId: null, manages: null },
