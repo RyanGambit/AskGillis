@@ -524,6 +524,20 @@ export default function App() {
   const [socialExpanded, setSocialExpanded] = useState(null);
   const [socialInput, setSocialInput] = useState("");
   const [selectedBrand, setSelectedBrand] = useState(null);
+  // Standalone chat: full-screen chat-only view. Enabled by /chat URL or sidebar toggle.
+  const [standaloneMode, setStandaloneMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.pathname.replace(/\/$/, '') === '/chat';
+  });
+  // Sync standaloneMode with browser back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const isChatPath = window.location.pathname.replace(/\/$/, '') === '/chat';
+      setStandaloneMode(isChatPath);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef(null);
@@ -817,13 +831,17 @@ export default function App() {
       }
     }
 
+    // Standalone chat: skip module context entirely — Tammy responds to the user's question alone
+    const modeContext = standaloneMode
+      ? "\n\nMODE: Open chat. The user is talking to you directly without a specific training module. Answer their question based on what they ask, using your full knowledge base. Don't assume a module context."
+      : "\n\nMODE: " + (MODE_PROMPTS[activeModule] || "") + "\n\n" + getCtx();
+
     const sys = SYSTEM_PROMPT
       + "\n\nSALES KNOWLEDGE BASE:\n" + kbContent
       + "\n\nGILLIS OPERATIONS KNOWLEDGE BASE:\n" + OPERATIONAL_KB
       + brandContext
       + roleContext
-      + "\n\nMODE: " + (MODE_PROMPTS[activeModule] || "")
-      + "\n\n" + getCtx()
+      + modeContext
       + "\n\nToday: " + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     try {
@@ -1175,6 +1193,125 @@ export default function App() {
   const sB = "rgba(255,255,255,0.08)";
   const sT = "rgba(255,255,255,0.55)";
 
+  // ---- STANDALONE CHAT (full-screen chat-only view) ----
+  if (standaloneMode) {
+    const exitStandalone = () => {
+      if (messages.length >= 2) saveSession();
+      setMessages([]);
+      convRef.current = [];
+      sessionStartRef.current = null;
+      setStandaloneMode(false);
+      if (window.location.pathname.replace(/\/$/, '') === '/chat') {
+        window.history.pushState({}, '', '/');
+      }
+    };
+
+    const STANDALONE_PROMPTS = [
+      "I just got an objection I've never heard before",
+      "Help me prep for a sales call",
+      "How do I pull a report from Merlin?",
+      "What should I focus on this week?",
+      "I had a rough call — help me think through it",
+      "Walk me through the 4A objection model",
+    ];
+
+    return (
+      <div style={{display:"flex",flexDirection:"column",height:"100dvh",background:G.bg,color:G.dark,fontFamily:"inherit"}}>
+        {/* Header */}
+        <div style={{padding:"14px 20px",background:G.white,borderBottom:`1px solid ${G.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <img src="/images/gillis-logo-white.png" alt="Gillis" style={{height:28,filter:"invert(15%) sepia(30%) saturate(1500%) hue-rotate(245deg) brightness(0.4)"}}/>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button onClick={exitStandalone}
+              style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}
+              onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
+              onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.text;}}>
+              ← Back to Training
+            </button>
+            <button onClick={() => { signOut(); setScreen("login"); setStandaloneMode(false); }}
+              style={{padding:"7px 12px",borderRadius:8,border:"none",background:"transparent",color:G.muted,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}
+              onMouseEnter={e => e.currentTarget.style.color=G.dark}
+              onMouseLeave={e => e.currentTarget.style.color=G.muted}>
+              Sign out
+            </button>
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:isMobile?"16px 14px":"28px 20px",display:"flex",flexDirection:"column"}}>
+          <div style={{width:"100%",maxWidth:720,margin:"0 auto",display:"flex",flexDirection:"column",gap:14,flex:1}}>
+            {!messages.length && (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:"40px 20px",textAlign:"center"}}>
+                <TammyAvatar size={72}/>
+                <div style={{fontSize:20,fontWeight:700,marginTop:16,marginBottom:6,color:G.dark}}>I'm right here</div>
+                <div style={{fontSize:14,color:G.muted,marginBottom:28,maxWidth:420,lineHeight:1.5}}>Ask me anything. Real sales question, tough call, a moment you need to think through — I've got you.</div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:8,width:"100%",maxWidth:560}}>
+                  {STANDALONE_PROMPTS.map((q, i) => (
+                    <button key={i} onClick={() => sendMessage(q)}
+                      style={{padding:"12px 16px",borderRadius:10,border:`1px solid ${G.border}`,background:G.white,color:G.text,fontSize:13,textAlign:"left",cursor:"pointer",fontFamily:"inherit",lineHeight:1.4,transition:"border-color 0.15s, box-shadow 0.15s"}}
+                      onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.boxShadow="0 2px 10px rgba(26,187,166,0.1)";}}
+                      onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.boxShadow="none";}}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((m, i) => m.isTammy ? (
+              <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",position:"relative"}} className="tammy-msg">
+                <TammyAvatar size={32}/>
+                <div style={{flex:1,padding:"14px 18px",background:G.white,border:`1px solid ${G.border}`,borderRadius:"4px 16px 16px 16px",fontSize:14,color:G.text,lineHeight:1.75,whiteSpace:"pre-wrap",boxShadow:"0 1px 3px rgba(0,0,0,0.03)"}}>{m.text}</div>
+              </div>
+            ) : (
+              <div key={i} style={{display:"flex",justifyContent:"flex-end"}}>
+                <div style={{maxWidth:"80%",padding:"14px 18px",background:G.purpleLight,border:`1px solid ${G.purpleBorder}`,borderRadius:"16px 4px 16px 16px",fontSize:14,color:G.dark,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.text}</div>
+              </div>
+            ))}
+
+            {loading && (
+              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                <TammyAvatar size={32}/>
+                <div style={{padding:"13px 16px",background:G.white,border:`1px solid ${G.border}`,borderRadius:"4px 14px 14px 14px",display:"flex",gap:5}}>
+                  {[0,1,2].map(i => <div key={i} style={{width:7,height:7,borderRadius:4,background:G.teal,opacity:0.4,animation:`pulse 1.4s ease ${i*0.2}s infinite`}}/>)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* New conversation + input */}
+        <div style={{background:G.white,borderTop:`1px solid ${G.border}`,padding:"12px 20px",flexShrink:0,boxShadow:"0 -1px 3px rgba(0,0,0,0.03)"}}>
+          <div style={{width:"100%",maxWidth:720,margin:"0 auto"}}>
+            {messages.length > 0 && (
+              <button onClick={() => {if(streamTickerRef.current){clearInterval(streamTickerRef.current);streamTickerRef.current=null;}if(messages.length>=2)saveSession();setMessages([]);convRef.current=[];sessionStartRef.current=null;setTimeout(()=>inputRef.current?.focus(),100);}}
+                style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:8,border:`1px solid ${G.border}`,background:G.bg,color:G.muted,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+                onMouseEnter={e => {e.currentTarget.style.borderColor=G.teal;e.currentTarget.style.color=G.teal;}}
+                onMouseLeave={e => {e.currentTarget.style.borderColor=G.border;e.currentTarget.style.color=G.muted;}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New conversation
+              </button>
+            )}
+            <div style={{display:"flex",gap:10,alignItems:"flex-end",background:G.bg,border:`1px solid ${G.border}`,borderRadius:12,padding:"6px 6px 6px 16px"}}>
+              <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}}
+                placeholder="Ask Tammy anything..." rows={1} autoFocus
+                style={{flex:1,resize:"none",border:"none",background:"transparent",color:G.dark,fontSize:14,fontFamily:"inherit",outline:"none",padding:"10px 0",lineHeight:1.4,maxHeight:120}}/>
+              <button onClick={() => sendMessage()} disabled={!input.trim()||loading}
+                style={{width:36,height:36,borderRadius:9,border:"none",background:input.trim()&&!loading?G.teal:G.borderLight,color:input.trim()&&!loading?"#fff":G.dim,fontSize:16,cursor:input.trim()&&!loading?"pointer":"default",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.15s"}}>
+                &#8593;
+              </button>
+            </div>
+            <div style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8,letterSpacing:"0.02em"}}>AskGillis — powered by Tammy's 28 years of hospitality sales</div>
+          </div>
+        </div>
+
+        <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{display:"flex",height:"100dvh",color:G.dark,background:G.bg,position:"relative",overflow:"hidden"}}>
       {/* SIDEBAR BACKDROP (mobile/tablet) */}
@@ -1190,6 +1327,23 @@ export default function App() {
 
         {mode === "seller" ? <>
           <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
+            {/* Ask Tammy — full-screen chat-only experience */}
+            <button onClick={() => {
+              if (messages.length >= 2) saveSession();
+              setMessages([]);
+              convRef.current = [];
+              sessionStartRef.current = null;
+              setStandaloneMode(true);
+              window.history.pushState({}, '', '/chat');
+              if (isCompact) setSidebarOpen(false);
+            }}
+              style={{width:"100%",padding:"11px 14px",marginBottom:10,borderRadius:8,border:`1px solid rgba(26,187,166,0.35)`,background:"rgba(26,187,166,0.08)",color:G.teal,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s, border-color 0.15s"}}
+              onMouseEnter={e => {e.currentTarget.style.background="rgba(26,187,166,0.15)";e.currentTarget.style.borderColor="rgba(26,187,166,0.5)";}}
+              onMouseLeave={e => {e.currentTarget.style.background="rgba(26,187,166,0.08)";e.currentTarget.style.borderColor="rgba(26,187,166,0.35)";}}>
+              <TammyAvatar size={18}/>
+              <span>Ask Tammy</span>
+              <span style={{marginLeft:"auto",fontSize:10,opacity:0.6}}>&#8599;</span>
+            </button>
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Training</div>
             {MODULES.filter(m => m.id !== "hub" && m.id !== "brands").map(m => {
               const a = activeModule === m.id;
