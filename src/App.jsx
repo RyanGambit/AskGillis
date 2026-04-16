@@ -478,7 +478,7 @@ function KBAdmin({ kbWords, hasOverride, onUpdate, onReset }) {
 
 // ---- Main App ----
 export default function App() {
-  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, guestSignIn, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
+  const { user, profile, loading: authLoading, signInWithPassword, setPassword, resetPassword, signOut, devSignIn, guestSignIn, isGuestSession, isSupabaseConfigured, authError, visiblePodIds, needsPasswordSetup } = useAuth();
   const { isDevMode } = useDevMode();
   const [screen, setScreen] = useState("login");
   const [email, setEmail] = useState("");
@@ -1962,7 +1962,7 @@ export default function App() {
       )}
 
       {/* DEV MODE ROLE SWITCHER */}
-      {isDevMode && <DevModeSwitcher />}
+      {(isDevMode || isGuestSession) && <DevModeSwitcher />}
 
       <style>{`@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:0.8}}@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.tammy-msg:hover button[data-copy]{opacity:1!important}@media(max-width:767px){.stats-grid{grid-template-columns:1fr 1fr!important}.patterns-grid{grid-template-columns:1fr!important}button[data-copy]{opacity:0.6!important}}button{transition:all 0.15s ease}::selection{background:rgba(26,187,166,0.2)}`}</style>
     </div>

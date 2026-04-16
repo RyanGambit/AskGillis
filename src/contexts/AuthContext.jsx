@@ -140,10 +140,10 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    if (!supabase) return;
     setDevOverride(null);
     setNeedsPasswordSetup(false);
-    await supabase.auth.signOut();
+    setIsGuestSession(false);
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
   }
@@ -190,9 +190,11 @@ export function AuthProvider({ children }) {
     return false;
   }
 
-  // Guest sign-in: log in an arbitrary email as a seller (for universal password access)
-  // If the email matches a seeded user, they get their proper role/pod.
-  // Otherwise they get a generic seller profile.
+  // Guest sign-in: log in via the universal password (GILLIS2026)
+  // These are execs/stakeholders who want to see every view.
+  // Seeded users get their real role. Everyone else gets executive access.
+  // Either way, the guest flag is set so the role switcher appears automatically.
+  const [isGuestSession, setIsGuestSession] = useState(false);
   function guestSignIn(email) {
     const cleanEmail = email.trim().toLowerCase();
     const seedUser = USERS.find(u => u.email === cleanEmail);
@@ -209,14 +211,15 @@ export function AuthProvider({ children }) {
       id: 'guest-' + cleanEmail,
       email: cleanEmail,
       full_name: cleanEmail.split('@')[0],
-      title: 'Guest',
-      role: 'seller',
-      pod_id: null,
-      manages: null,
+      title: 'Guest (Executive view)',
+      role: 'executive',
+      pod_id: 'executive_team',
+      manages: ['executive_team'],
       is_active: true,
     };
     setUser({ id: profile.id, email: cleanEmail });
     setProfile(profile);
+    setIsGuestSession(true);
     return true;
   }
 
@@ -238,6 +241,7 @@ export function AuthProvider({ children }) {
       devSignIn,
       guestSignIn,
       devOverride,
+      isGuestSession,
       isSupabaseConfigured: !!supabase,
     }}>
       {children}
