@@ -10,6 +10,7 @@ export const MODULES = [
   {id:"social",label:"LinkedIn & Social",icon:"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",color:"#3B82F6"},
   {id:"methodology",label:"Methodology",icon:"M4 6h16M4 10h16M4 14h10M4 18h7",color:G.muted},
   {id:"hub",label:"Gillis Hub",icon:"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",color:"#6B7280"},
+  {id:"brands",label:"Brands",icon:"M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9v.01M9 12v.01M9 15v.01M9 18v.01",color:"#8B4513"},
 ];
 
 export const MODE_PROMPTS = {
@@ -22,5 +23,6 @@ export const MODE_PROMPTS = {
   social:"Help with LinkedIn and social selling for hotel sales. Be specific to hospitality. No generic LinkedIn advice. Every suggestion should sound like a real hotel salesperson, not a marketing guru or influencer. Keep it practical and direct. When drafting content for them (connection requests, messages, posts), write the full draft — word limit doesn't apply to drafted content.",
   methodology:"Explain through a real hotel sales scenario in 3-4 sentences. Not a textbook definition.",
   hub:"The user is asking about Gillis internal resources, policies, systems, or processes. Answer directly from what you know. If it's in the knowledge base, reference it. If you don't have the specific answer, say so clearly and suggest who they should contact. Don't coach, just inform. Keep it brief.",
+  brands:"The user is on the Brands section. If a specific brand KB is loaded in your context (look for BRAND CONTEXT below), answer brand-specific questions using that content. Reference portals, systems, acronyms, rate programs, and processes that are real for that brand. If the user asks about a different brand than the one loaded, suggest they switch to that brand's page so you can load the right context. Be specific and direct, not generic. When you don't know something brand-specific, say so and suggest they check the brand's SharePoint folder or contact their brand rep.",
   help:"The user is browsing help. If they ask a question, answer it directly and briefly. You can suggest which module would be best for what they need.",
 };

@@ -15,6 +15,9 @@ import DevModeSwitcher from "./components/DevModeSwitcher.jsx";
 import LeaderDashboard from "./views/LeaderDashboard.jsx";
 import ExecutiveDashboard from "./views/ExecutiveDashboard.jsx";
 import AdminPanel from "./views/AdminPanel.jsx";
+import Brands from "./views/Brands.jsx";
+import { getBrandKB } from "./data/brandKB/index.js";
+import { BRANDS } from "./data/brandsData.js";
 
 // ---- UI Components ----
 const GillisLogo = ({size=32}) => (
@@ -519,6 +522,7 @@ export default function App() {
   };
   const [socialExpanded, setSocialExpanded] = useState(null);
   const [socialInput, setSocialInput] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef(null);
@@ -781,9 +785,24 @@ export default function App() {
     const roleContext = userRole === "manager"
       ? "\n\nUSER ROLE: This person is a manager/RDOS who oversees sellers. If they ask about their own selling, coach them normally. If they ask about managing their team, coaching their sellers, or how to help a struggling rep, shift to coaching-the-coach mode. Help them diagnose seller issues and suggest how to address them in one-on-ones."
       : "\n\nUSER ROLE: This person is a seller.";
+    // Load brand KB if user is on a brand page
+    let brandContext = "";
+    if (activeModule === "brands") {
+      const crossBrandKB = getBrandKB("cross-brand");
+      if (crossBrandKB) brandContext += "\n\nCROSS-BRAND REFERENCE:\n" + crossBrandKB;
+      if (selectedBrand) {
+        const kb = getBrandKB(selectedBrand);
+        const brandInfo = BRANDS.find(b => b.slug === selectedBrand);
+        if (kb && brandInfo) {
+          brandContext += "\n\nBRAND CONTEXT: The user is currently viewing the " + brandInfo.name + " brand page. Use the following brand-specific reference to answer their questions:\n\n" + kb;
+        }
+      }
+    }
+
     const sys = SYSTEM_PROMPT
       + "\n\nSALES KNOWLEDGE BASE:\n" + kbContent
       + "\n\nGILLIS OPERATIONS KNOWLEDGE BASE:\n" + OPERATIONAL_KB
+      + brandContext
       + roleContext
       + "\n\nMODE: " + (MODE_PROMPTS[activeModule] || "")
       + "\n\n" + getCtx()
@@ -1154,7 +1173,7 @@ export default function App() {
         {mode === "seller" ? <>
           <div style={{flex:1,padding:"14px 10px",overflowY:"auto"}}>
             <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"0 12px",marginBottom:8}}>Training</div>
-            {MODULES.filter(m => m.id !== "hub").map(m => {
+            {MODULES.filter(m => m.id !== "hub" && m.id !== "brands").map(m => {
               const a = activeModule === m.id;
               return <button key={m.id} onClick={() => {setActiveModule(m.id);if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(26,187,166,0.1)":"transparent",color:a?G.teal:sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
                 <NavIcon path={m.icon} color={a?G.teal:sT} size={16}/>{m.label}
@@ -1162,9 +1181,14 @@ export default function App() {
             })}
             <div style={{borderTop:`0.5px solid ${sB}`,margin:"10px 12px 8px",paddingTop:10}}>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",marginBottom:8}}>Resources</div>
-              {(() => { const m = MODULES.find(x => x.id === "hub"); const a = activeModule === "hub"; return m ? <button onClick={() => {setActiveModule("hub");if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(255,255,255,0.06)":"transparent",color:a?"rgba(255,255,255,0.7)":sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
-                <NavIcon path={m.icon} color={a?"rgba(255,255,255,0.7)":sT} size={16}/>{m.label}
-              </button> : null; })()}
+              {["hub", "brands"].map(id => {
+                const m = MODULES.find(x => x.id === id);
+                if (!m) return null;
+                const a = activeModule === id;
+                return <button key={id} onClick={() => {setActiveModule(id);if(id!=="brands")setSelectedBrand(null);if(isCompact)setSidebarOpen(false);}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",background:a?"rgba(255,255,255,0.06)":"transparent",color:a?"rgba(255,255,255,0.7)":sT,fontSize:12.5,fontWeight:a?600:400,marginBottom:2,display:"flex",alignItems:"center",gap:10}}>
+                  <NavIcon path={m.icon} color={a?"rgba(255,255,255,0.7)":sT} size={16}/>{m.label}
+                </button>;
+              })}
             </div>
             {sessions.length > 0 && <>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)",padding:"12px 12px 0",marginTop:8,marginBottom:8,borderTop:`0.5px solid ${sB}`}}>Recent</div>
@@ -1616,6 +1640,15 @@ export default function App() {
           )}
 
           {/* Help & FAQ */}
+          {mode === "seller" && activeModule === "brands" && (
+            <Brands
+              selectedBrandSlug={selectedBrand}
+              onSelectBrand={(slug) => setSelectedBrand(slug)}
+              onBack={() => setSelectedBrand(null)}
+              onAskTammy={() => setChatOpen(true)}
+            />
+          )}
+
           {activeModule === "help" && (
             <div style={{maxWidth:620}}>
               <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px"}}>Help & FAQ</h2>
