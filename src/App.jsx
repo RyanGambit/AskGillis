@@ -747,8 +747,9 @@ export default function App() {
   // Auto-navigate to platform when auth state changes
   useEffect(() => {
     if (profile && user) {
-      // Set mode based on role
-      if (profile.role === 'executive' || profile.role === 'leader') {
+      // Executives, leaders, and admins land in their dashboard view by default
+      // and can toggle to seller mode (modules + Tammy chat).
+      if (profile.role === 'executive' || profile.role === 'leader' || profile.role === 'admin') {
         setMode('manager');
         setUserRole('manager');
       } else {
